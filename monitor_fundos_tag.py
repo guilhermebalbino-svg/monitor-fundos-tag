@@ -820,18 +820,22 @@ def get_benchmark_returns(key: str, ref_date: date,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# HTML TABLE RENDERING
+# HTML TABLE RENDERING  (dark theme)
 # ──────────────────────────────────────────────────────────────────────────────
 
-COLOR_HEADER = "#7B2D40"        # Dark maroon
-COLOR_BG_HEADER_TEXT = "white"
-COLOR_POS = "#C8E6C9"           # Light green
-COLOR_NEG = "#FFCDD2"           # Light red
-COLOR_NEUTRAL = "#FFFFFF"
-COLOR_BMARK = "#F5F5F5"         # Light gray for benchmark rows
-COLOR_FUND = "#FFFFFF"          # White for fund rows
-COLOR_GROUP_TEXT = "white"
-COLOR_SECTION = "#7B2D40"
+# Paleta dark
+COLOR_HEADER    = "#7B2D40"   # maroon — cabeçalhos e seções
+COLOR_HDR_TEXT  = "#FFFFFF"
+COLOR_FUND_BG   = "#1a0d0d"   # fundo linhas de fundo
+COLOR_BMARK_BG  = "#120808"   # fundo linhas de benchmark (mais escuro)
+COLOR_POS_BG    = "#163316"   # verde escuro — retorno positivo
+COLOR_POS_TEXT  = "#8fd68f"   # verde claro — texto retorno positivo
+COLOR_NEG_BG    = "#331616"   # vermelho escuro — retorno negativo
+COLOR_NEG_TEXT  = "#d68f8f"   # vermelho claro — texto retorno negativo
+COLOR_EMPTY_BG  = "transparent"  # sem cor p/ células sem dado
+COLOR_EMPTY_TEXT = "#4a3a3a"  # cinza escuro p/ "-"
+COLOR_META_TEXT = "#b09090"   # texto secundário (gestão, liquidez, etc.)
+COLOR_DATE_TEXT = "#c8b8b8"   # texto datas
 
 
 def fmt_pct(v, decimals=2) -> str:
@@ -840,53 +844,78 @@ def fmt_pct(v, decimals=2) -> str:
     return f"{v:.{decimals}f}%"
 
 
-def cell_color(v) -> str:
-    if pd.isna(v):
-        return COLOR_NEUTRAL
-    return COLOR_POS if v >= 0 else COLOR_NEG
+def _num_cell(v_str: str, raw, bg_override: str = "") -> str:
+    """Gera célula numérica com cor condicional. Sem cor se raw for NaN."""
+    if pd.isna(raw):
+        return (
+            f'<td style="text-align:right; padding:5px 12px; '
+            f'color:{COLOR_EMPTY_TEXT}; white-space:nowrap;">{v_str}</td>'
+        )
+    bg   = COLOR_POS_BG   if raw >= 0 else COLOR_NEG_BG
+    txt  = COLOR_POS_TEXT if raw >= 0 else COLOR_NEG_TEXT
+    if bg_override:
+        bg = bg_override
+    return (
+        f'<td style="text-align:right; padding:5px 12px; '
+        f'background:{bg}; color:{txt}; white-space:nowrap; '
+        f'font-variant-numeric:tabular-nums;">{v_str}</td>'
+    )
 
 
 def build_html_table(rows: list) -> str:
-    """Build styled HTML table from list of row dicts."""
-    th_style = (
-        f"background:{COLOR_HEADER}; color:{COLOR_BG_HEADER_TEXT}; "
-        "padding:6px 10px; text-align:center; font-size:11px; "
-        "border:1px solid #5a1e2e; white-space:nowrap;"
+    """Constrói tabela HTML estilizada (dark theme)."""
+    TH = (
+        f"background:{COLOR_HEADER}; color:{COLOR_HDR_TEXT}; "
+        "padding:7px 12px; text-align:center; font-size:11px; font-weight:600; "
+        "border-bottom:2px solid #5a1e2e; border-right:1px solid #5a1e2e; "
+        "white-space:nowrap; letter-spacing:0.6px;"
     )
-    th_name_style = (
-        f"background:{COLOR_HEADER}; color:{COLOR_BG_HEADER_TEXT}; "
-        "padding:6px 10px; text-align:left; font-size:11px; "
-        "border:1px solid #5a1e2e; white-space:nowrap;"
+    TH_L = TH.replace("text-align:center", "text-align:left")
+
+    # Larguras fixas para alinhar colunas
+    cols = [
+        ("FUNDO",            "min-width:250px; text-align:left;",  TH_L),
+        ("TX GESTÃO",        "min-width:80px;  text-align:center;", TH),
+        ("D",                "min-width:72px;  text-align:right;",  TH),
+        ("M",                "min-width:72px;  text-align:right;",  TH),
+        ("ANO",              "min-width:72px;  text-align:right;",  TH),
+        ("1 ANO",            "min-width:76px;  text-align:right;",  TH),
+        ("2 ANOS",           "min-width:76px;  text-align:right;",  TH),
+        ("ÚLT. COTA",        "min-width:110px; text-align:center;", TH),
+        ("LIQUIDEZ",         "min-width:72px;  text-align:center;", TH),
+        ("PUB. ALVO",        "min-width:90px;  text-align:center;", TH),
+    ]
+
+    header_cells = "".join(
+        f'<th style="{th_s} {col_s}">{label}</th>'
+        for label, col_s, th_s in cols
     )
 
     html = f"""
     <style>
-        .tag-table {{ border-collapse: collapse; width: 100%; font-family: 'Segoe UI', Arial, sans-serif; font-size:12px; }}
-        .tag-table td {{ padding: 5px 10px; border: 1px solid #ddd; white-space: nowrap; }}
-        .section-row td {{ background: {COLOR_HEADER}; color: white; font-weight: bold;
-                          font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-                          padding: 4px 10px; border: 1px solid #5a1e2e; }}
-        .fund-row td {{ background: #FFFFFF; }}
-        .bmark-row td {{ background: {COLOR_BMARK}; color: #555; font-style: italic; }}
-        .num-cell {{ text-align: right; font-variant-numeric: tabular-nums; }}
-        .name-cell {{ text-align: left; font-weight: 500; }}
-        .bmark-name-cell {{ text-align: left; color: #555; font-style: italic; padding-left: 20px !important; }}
+      body  {{ background:#0d0608; margin:0; padding:4px 0;
+               font-family:'Segoe UI',Arial,sans-serif; }}
+      table {{ border-collapse:collapse; width:100%; font-size:12px; }}
+      td    {{ border-bottom:1px solid #2a1010; white-space:nowrap; }}
+      tr:hover td {{ filter:brightness(1.12); }}
+      .sec td {{
+        background:{COLOR_HEADER}; color:#fff; font-weight:700;
+        font-size:11px; text-transform:uppercase; letter-spacing:1.5px;
+        padding:5px 12px; border-bottom:2px solid #5a1e2e;
+      }}
+      .fund td {{ background:{COLOR_FUND_BG}; }}
+      .bmark td {{ background:{COLOR_BMARK_BG}; font-style:italic; }}
+      .name  {{ text-align:left;   padding:5px 12px; color:#e8d8d8;
+                font-weight:500; }}
+      .bname {{ text-align:left;   padding:5px 12px 5px 24px;
+                color:{COLOR_META_TEXT}; font-style:italic; }}
+      .meta  {{ text-align:center; padding:5px 12px;
+                color:{COLOR_META_TEXT}; white-space:nowrap; }}
+      .date  {{ text-align:center; padding:5px 12px;
+                color:{COLOR_DATE_TEXT}; white-space:nowrap; }}
     </style>
-    <table class="tag-table">
-    <thead>
-        <tr>
-            <th style="{th_name_style}; min-width:220px;">FUNDO</th>
-            <th style="{th_style}">Tx Gestão</th>
-            <th style="{th_style}">D</th>
-            <th style="{th_style}">M</th>
-            <th style="{th_style}">ANO</th>
-            <th style="{th_style}">1 ANO</th>
-            <th style="{th_style}">2 ANOS</th>
-            <th style="{th_style}">DATA ÚLTIMA COTA</th>
-            <th style="{th_style}">LIQUIDEZ</th>
-            <th style="{th_style}">PUB. ALVO</th>
-        </tr>
-    </thead>
+    <table>
+    <thead><tr>{header_cells}</tr></thead>
     <tbody>
     """
 
@@ -894,75 +923,51 @@ def build_html_table(rows: list) -> str:
         rtype = row.get("type", "fund")
 
         if rtype == "section":
-            html += f"""
-            <tr class="section-row">
-                <td colspan="10">{row['name']}</td>
-            </tr>"""
+            html += (
+                f'<tr class="sec"><td colspan="10" style="padding:5px 12px;">'
+                f'{row["name"]}</td></tr>\n'
+            )
 
         elif rtype == "benchmark":
-            ret = row.get("returns", {})
-            d_col = fmt_pct(ret.get("D"))
-            m_col = fmt_pct(ret.get("M"))
-            ano_col = fmt_pct(ret.get("ANO"))
-            y1_col = fmt_pct(ret.get("1ANO"))
-            y2_col = fmt_pct(ret.get("2ANOS"))
-            uc = ret.get("ultima_cota")
-            uc_str = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
+            ret  = row.get("returns", {})
+            uc   = ret.get("ultima_cota")
+            uc_s = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
+            html += (
+                f'<tr class="bmark">'
+                f'<td class="bname">{row["name"]}</td>'
+                f'<td class="meta">-</td>'
+                f'{_num_cell(fmt_pct(ret.get("D")),     ret.get("D"))}'
+                f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
+                f'{_num_cell(fmt_pct(ret.get("ANO")),   ret.get("ANO"))}'
+                f'{_num_cell(fmt_pct(ret.get("1ANO")),  ret.get("1ANO"))}'
+                f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
+                f'<td class="date">{uc_s}</td>'
+                f'<td class="meta">-</td>'
+                f'<td class="meta">-</td>'
+                f'</tr>\n'
+            )
 
-            def bm_num_cell(v, raw):
-                color = cell_color(raw)
-                return (
-                    f'<td class="num-cell" style="background:{color}; '
-                    f'text-align:right;">{v}</td>'
-                )
-
-            html += f"""
-            <tr class="bmark-row">
-                <td class="bmark-name-cell">{row['name']}</td>
-                <td class="num-cell">-</td>
-                {bm_num_cell(d_col, ret.get('D'))}
-                {bm_num_cell(m_col, ret.get('M'))}
-                {bm_num_cell(ano_col, ret.get('ANO'))}
-                {bm_num_cell(y1_col, ret.get('1ANO'))}
-                {bm_num_cell(y2_col, ret.get('2ANOS'))}
-                <td class="num-cell">{uc_str}</td>
-                <td class="num-cell">-</td>
-                <td class="num-cell">-</td>
-            </tr>"""
-
-        else:  # fund row
-            ret = row.get("returns", {})
-            d_col = fmt_pct(ret.get("D"))
-            m_col = fmt_pct(ret.get("M"))
-            ano_col = fmt_pct(ret.get("ANO"))
-            y1_col = fmt_pct(ret.get("1ANO"))
-            y2_col = fmt_pct(ret.get("2ANOS"))
-            uc = ret.get("ultima_cota")
-            uc_str = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
-            tx = row.get("tx_gestao", "-")
-            liq = row.get("liquidez", "-")
-            pub = row.get("pub_alvo", "-")
-
-            def fund_num_cell(v, raw):
-                color = cell_color(raw)
-                return (
-                    f'<td class="num-cell" style="background:{color}; '
-                    f'text-align:right;">{v}</td>'
-                )
-
-            html += f"""
-            <tr class="fund-row">
-                <td class="name-cell">{row['name']}</td>
-                <td class="num-cell">{tx}</td>
-                {fund_num_cell(d_col, ret.get('D'))}
-                {fund_num_cell(m_col, ret.get('M'))}
-                {fund_num_cell(ano_col, ret.get('ANO'))}
-                {fund_num_cell(y1_col, ret.get('1ANO'))}
-                {fund_num_cell(y2_col, ret.get('2ANOS'))}
-                <td class="num-cell">{uc_str}</td>
-                <td class="num-cell">{liq}</td>
-                <td class="num-cell">{pub}</td>
-            </tr>"""
+        else:  # fund
+            ret  = row.get("returns", {})
+            uc   = ret.get("ultima_cota")
+            uc_s = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
+            tx   = row.get("tx_gestao", "-")
+            liq  = row.get("liquidez",  "-")
+            pub  = row.get("pub_alvo",  "-")
+            html += (
+                f'<tr class="fund">'
+                f'<td class="name">{row["name"]}</td>'
+                f'<td class="meta">{tx}</td>'
+                f'{_num_cell(fmt_pct(ret.get("D")),     ret.get("D"))}'
+                f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
+                f'{_num_cell(fmt_pct(ret.get("ANO")),   ret.get("ANO"))}'
+                f'{_num_cell(fmt_pct(ret.get("1ANO")),  ret.get("1ANO"))}'
+                f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
+                f'<td class="date">{uc_s}</td>'
+                f'<td class="meta">{liq}</td>'
+                f'<td class="meta">{pub}</td>'
+                f'</tr>\n'
+            )
 
     html += "</tbody></table>"
     return html
@@ -973,35 +978,100 @@ def build_html_table(rows: list) -> str:
 # ──────────────────────────────────────────────────────────────────────────────
 
 def main():
-    # Header
-    st.markdown(
-        """
-        <div style="background:#7B2D40; padding:18px 24px; border-radius:6px; margin-bottom:16px;">
-            <h2 style="color:white; margin:0; font-size:22px; font-family:'Segoe UI',Arial,sans-serif;">
-                TAG Investimentos
-            </h2>
-            <p style="color:#f0c0cc; margin:4px 0 0 0; font-size:14px; font-family:'Segoe UI',Arial,sans-serif;">
-                Monitor de Fundos Condominiais TAG
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    import streamlit.components.v1 as components
 
-    # Controls
-    col1, col2, col3 = st.columns([3, 1, 1])
-    with col1:
+    # ── CSS global dark theme ─────────────────────────────────────────────────
+    st.markdown("""
+    <style>
+      /* Fundo geral */
+      .stApp, [data-testid="stAppViewContainer"], .main {
+          background-color: #0d0608 !important;
+      }
+      /* Sidebar */
+      [data-testid="stSidebar"] {
+          background-color: #0a0406 !important;
+          border-right: 1px solid #3a1515 !important;
+      }
+      /* Conteúdo principal */
+      .main .block-container {
+          background-color: #0d0608;
+          padding-top: 0.8rem;
+          max-width: 100%;
+      }
+      /* Esconde elementos padrão Streamlit */
+      #MainMenu { visibility: hidden; }
+      footer    { visibility: hidden; }
+      header[data-testid="stHeader"] { visibility: hidden; height:0; }
+      /* Spinner */
+      .stSpinner > div > div { border-top-color: #c0a080 !important; }
+      /* Botão */
+      .stButton > button {
+          background-color: #7B2D40 !important;
+          color: white !important;
+          border: none !important;
+          border-radius: 3px !important;
+          font-size: 12px !important;
+          padding: 4px 12px !important;
+      }
+      .stButton > button:hover { background-color: #9B3D50 !important; }
+      /* Textos gerais */
+      p, div, span, label { color: #e0d0d0; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ── Sidebar — logo TAG ────────────────────────────────────────────────────
+    with st.sidebar:
+        st.markdown("""
+        <div style="text-align:center; padding:28px 12px 16px 12px;">
+          <div style="font-family:'Georgia',serif; font-size:44px; font-weight:bold;
+                      color:#ffffff; letter-spacing:4px; line-height:1;">TAG</div>
+          <div style="font-family:'Georgia',serif; font-size:9px; color:#c0a080;
+                      letter-spacing:5px; text-transform:uppercase; margin-top:3px;">
+            INVESTIMENTOS
+          </div>
+          <div style="width:65%; height:1px; background:#7B2D40;
+                      margin:14px auto 0 auto;"></div>
+        </div>
+        <div style="padding:4px 16px 20px 16px;">
+          <div style="color:#7B2D40; font-size:9px; letter-spacing:1.5px;
+                      text-transform:uppercase; font-weight:700; margin-bottom:8px;">
+            MONITOR
+          </div>
+          <div style="color:#e8d8d8; font-size:13px; padding:7px 10px;
+                      background:#1a0c0c; border-radius:3px;
+                      border-left:3px solid #7B2D40;">
+            📊 Fundos Condominiais
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Cabeçalho da página ───────────────────────────────────────────────────
+    col_title, col_btn = st.columns([5, 1])
+    with col_title:
         st.markdown(
-            f"<span style='color:#888; font-size:12px;'>Atualizado: "
-            f"{datetime.now().strftime('%d/%m/%Y %H:%M')}</span>",
+            f"""
+            <div style="padding:4px 0 10px 0;">
+              <div style="font-size:21px; font-weight:600; color:#ffffff;
+                          font-family:'Segoe UI',Arial,sans-serif; letter-spacing:0.4px;">
+                Monitor de Fundos Condominiais
+              </div>
+              <div style="height:2px; background:linear-gradient(to right,#7B2D40,transparent);
+                          margin-top:6px;"></div>
+              <div style="color:#7a6060; font-size:11px; margin-top:6px;
+                          font-family:'Segoe UI',Arial,sans-serif;">
+                Atualizado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}
+              </div>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
-    with col3:
-        if st.button("🔄 Atualizar dados", use_container_width=True):
+    with col_btn:
+        st.markdown("<div style='padding-top:6px;'></div>", unsafe_allow_html=True)
+        if st.button("🔄 Atualizar", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
 
-    # Load data
+    # ── Carrega dados ─────────────────────────────────────────────────────────
     with st.spinner("Buscando dados da CVM e benchmarks..."):
         (
             cvm_df,
@@ -1018,15 +1088,14 @@ def main():
 
     today = date.today()
 
-    # Build quota series per CNPJ
+    # Monta séries de cotas por CNPJ
     quota_map: dict[str, pd.Series] = {}
     if not cvm_df.empty:
         for cnpj, grp in cvm_df.groupby("CNPJ_norm"):
             s = grp.set_index("DT_COMPTC")["VL_QUOTA"].sort_index()
             quota_map[cnpj] = s
 
-    # ── ref_date: moda da última data de cota entre os fundos ativos ──────────
-    # Benchmarks serão calculados até esta data para evitar discrepâncias.
+    # ref_date = moda da última data de cota entre os fundos ativos
     all_cnpjs = [f["cnpj"] for g in FUND_GROUPS for f in g["funds"]]
     last_dates = []
     for cnpj in all_cnpjs:
@@ -1039,80 +1108,69 @@ def main():
     else:
         ref_date = today
 
-    # Build table rows
+    # ── Monta linhas da tabela ────────────────────────────────────────────────
     table_rows = []
 
     for group in FUND_GROUPS:
-        # Section header
         table_rows.append({"type": "section", "name": group["group"]})
 
-        # Fund rows
         for fund in group["funds"]:
-            cnpj = fund["cnpj"]
+            cnpj      = fund["cnpj"]
             max_stale = fund.get("max_stale_days", 45)
             if cnpj in quota_map:
                 returns = compute_fund_returns(quota_map[cnpj], today)
-                # Mark stale data as N/D for period returns
                 uc = returns.get("ultima_cota")
                 if uc and (today - uc).days > max_stale:
-                    returns = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
+                    returns = {k: np.nan for k in
+                               ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
             else:
-                returns = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
+                returns = {k: np.nan for k in
+                           ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
 
-            table_rows.append(
-                {
-                    "type": "fund",
-                    "name": fund["name"],
-                    "tx_gestao": fund["tx_gestao"],
-                    "liquidez": fund["liquidez"],
-                    "pub_alvo": fund["pub_alvo"],
-                    "returns": returns,
-                }
-            )
+            table_rows.append({
+                "type":     "fund",
+                "name":     fund["name"],
+                "tx_gestao": fund["tx_gestao"],
+                "liquidez": fund["liquidez"],
+                "pub_alvo": fund["pub_alvo"],
+                "returns":  returns,
+            })
 
-        # Benchmark rows
         for bm in group["benchmarks"]:
             bm_returns = get_benchmark_returns(
-                bm["key"],
-                ref_date,
-                cdi_daily,
-                imab_prices,
-                imab5_prices,
-                imab5plus_prices,
-                ipca_monthly,
-                ibov_daily,
-                usdbrl_prices,
-                sofr_daily,
-                ihfa_series,
+                bm["key"], ref_date,
+                cdi_daily, imab_prices, imab5_prices, imab5plus_prices,
+                ipca_monthly, ibov_daily, usdbrl_prices, sofr_daily, ihfa_series,
             )
-            table_rows.append(
-                {
-                    "type": "benchmark",
-                    "name": bm["name"],
-                    "returns": bm_returns,
-                }
-            )
+            table_rows.append({
+                "type":    "benchmark",
+                "name":    bm["name"],
+                "returns": bm_returns,
+            })
 
-    # Render — usa components.html para garantir renderização correta de tabelas HTML
-    import streamlit.components.v1 as components
+    # ── Renderiza tabela ──────────────────────────────────────────────────────
     table_html = build_html_table(table_rows)
+
     if not ihfa_series.empty:
-        ihfa_src = "ComDinheiro" if COMDINHEIRO_BEARER_TOKEN else "ANBIMA"
+        ihfa_src  = "ComDinheiro" if COMDINHEIRO_BEARER_TOKEN else "ANBIMA"
         ihfa_note = f" | IHFA: {ihfa_src}"
     else:
-        ihfa_note = " | IHFA: N/D (configure COMDINHEIRO_BEARER_TOKEN no código)"
+        ihfa_note = ""
+
     footer = (
-        "<div style='margin-top:16px; color:#aaa; font-size:11px; text-align:center;'>"
-        "Fonte: CVM (cotas diárias), BCB SGS (CDI/IPCA/PTAX), Yahoo Finance (IBOVESPA/ETFs IMA-B), FRED (SOFR)"
-        f"{ihfa_note}.<br>"
-        "Retornos são brutos de IR e taxas."
+        "<div style='margin-top:20px; color:#4a3535; font-size:10px;"
+        " text-align:center; font-family:Segoe UI,Arial,sans-serif;'>"
+        "Fonte: CVM (cotas diárias) · BCB SGS (CDI / IPCA / PTAX) · "
+        "Yahoo Finance (IBOVESPA / ETFs IMA-B) · FRED (SOFR)"
+        f"{ihfa_note} · Retornos brutos de IR e taxas."
         "</div>"
     )
+
     full_html = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8">
 <style>
-  body {{ margin:0; padding:0; font-family:'Segoe UI',Arial,sans-serif; background:transparent; }}
+  html, body {{ margin:0; padding:0; background:#0d0608; }}
 </style>
 </head>
 <body>
@@ -1120,7 +1178,8 @@ def main():
 {footer}
 </body>
 </html>"""
-    components.html(full_html, height=1700, scrolling=True)
+
+    components.html(full_html, height=1750, scrolling=True)
 
 
 if __name__ == "__main__":
