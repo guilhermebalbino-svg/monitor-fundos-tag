@@ -824,8 +824,9 @@ def get_benchmark_returns(key: str, ref_date: date,
 # ──────────────────────────────────────────────────────────────────────────────
 
 # Paleta dark
-COLOR_HEADER    = "#7B2D40"   # maroon — cabeçalhos e seções
+COLOR_HEADER    = "#7B2D40"   # maroon — bordas
 COLOR_HDR_TEXT  = "#FFFFFF"
+COLOR_ORANGE    = "#E8801A"   # laranja TAG — texto de cabeçalhos
 COLOR_FUND_BG   = "#1a0d0d"   # fundo linhas de fundo
 COLOR_BMARK_BG  = "#120808"   # fundo linhas de benchmark (mais escuro)
 COLOR_POS_BG    = "#163316"   # verde escuro — retorno positivo
@@ -865,9 +866,9 @@ def _num_cell(v_str: str, raw, bg_override: str = "") -> str:
 def build_html_table(rows: list) -> str:
     """Constrói tabela HTML estilizada (dark theme)."""
     TH = (
-        f"background:{COLOR_HEADER}; color:{COLOR_HDR_TEXT}; "
+        f"background:{COLOR_BMARK_BG}; color:{COLOR_ORANGE}; "
         "padding:7px 12px; text-align:center; font-size:11px; font-weight:600; "
-        "border-bottom:2px solid #5a1e2e; border-right:1px solid #5a1e2e; "
+        "border-bottom:2px solid #E8801A55; border-right:1px solid #2a1010; "
         "white-space:nowrap; letter-spacing:0.6px;"
     )
     TH_L = TH.replace("text-align:center", "text-align:left")
@@ -899,9 +900,9 @@ def build_html_table(rows: list) -> str:
       td    {{ border-bottom:1px solid #2a1010; white-space:nowrap; }}
       tr:hover td {{ filter:brightness(1.12); }}
       .sec td {{
-        background:{COLOR_HEADER}; color:#fff; font-weight:700;
+        background:{COLOR_BMARK_BG}; color:{COLOR_ORANGE}; font-weight:700;
         font-size:11px; text-transform:uppercase; letter-spacing:1.5px;
-        padding:5px 12px; border-bottom:2px solid #5a1e2e;
+        padding:5px 12px; border-bottom:2px solid #E8801A55;
       }}
       .fund td {{ background:{COLOR_FUND_BG}; }}
       .bmark td {{ background:{COLOR_BMARK_BG}; font-style:italic; }}
