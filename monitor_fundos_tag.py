@@ -1166,6 +1166,22 @@ def main():
         "</div>"
     )
 
+    obs_html = ""
+    if OBSERVACOES:
+        obs_html = f"""
+<div style="margin-top:12px; padding:10px 16px 12px 16px;
+            background:#120a0a; border-left:3px solid #E8801A;
+            border-radius:0 3px 3px 0;
+            font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="color:#E8801A; font-size:10px; font-weight:700;
+              letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px;">
+    &#9888; Observações
+  </div>
+  <div style="color:#c8b8a8; font-size:12px; line-height:1.6;">
+    {OBSERVACOES}
+  </div>
+</div>"""
+
     full_html = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8">
@@ -1176,27 +1192,11 @@ def main():
 <body>
 {table_html}
 {footer}
+{obs_html}
 </body>
 </html>"""
 
-    components.html(full_html, height=1750, scrolling=True)
-
-    # ── Caixa de Observações ──────────────────────────────────────────────────
-    if OBSERVACOES:
-        st.markdown(f"""
-        <div style="margin-top:8px; padding:10px 16px 12px 16px;
-                    background:#120a0a; border-left:3px solid #E8801A;
-                    border-radius:0 3px 3px 0;
-                    font-family:'Segoe UI',Arial,sans-serif;">
-          <div style="color:#E8801A; font-size:10px; font-weight:700;
-                      letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px;">
-            ⚠ Observações
-          </div>
-          <div style="color:#c8b8a8; font-size:12px; line-height:1.6;">
-            {OBSERVACOES}
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+    components.html(full_html, height=1800, scrolling=True)
 
 
 import traceback as _tb
