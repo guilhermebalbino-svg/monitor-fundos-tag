@@ -1007,14 +1007,14 @@ def main():
       .stSpinner > div > div { border-top-color: #c0a080 !important; }
       /* Botão */
       .stButton > button {
-          background-color: #7B2D40 !important;
-          color: white !important;
+          background-color: #4a1525 !important;
+          color: #c8a8a8 !important;
           border: none !important;
           border-radius: 3px !important;
           font-size: 12px !important;
           padding: 4px 12px !important;
       }
-      .stButton > button:hover { background-color: #9B3D50 !important; }
+      .stButton > button:hover { background-color: #5e1a30 !important; }
       /* Textos gerais */
       p, div, span, label { color: #e0d0d0; }
     </style>
