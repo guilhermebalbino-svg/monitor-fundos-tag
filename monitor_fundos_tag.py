@@ -1091,7 +1091,7 @@ def main():
     today = date.today()
 
     # Monta séries de cotas por CNPJ
-    quota_map: dict[str, pd.Series] = {}
+    quota_map = {}  # cnpj → pd.Series de cotas
     if not cvm_df.empty:
         for cnpj, grp in cvm_df.groupby("CNPJ_norm"):
             s = grp.set_index("DT_COMPTC")["VL_QUOTA"].sort_index()
