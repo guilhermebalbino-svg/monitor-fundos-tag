@@ -1015,14 +1015,14 @@ def main():
       .stSpinner > div > div { border-top-color: #c0a080 !important; }
       /* Botão */
       .stButton > button {
-          background-color: #922040 !important;
+          background-color: #7a1a35 !important;
           color: #f0d8d8 !important;
           border: none !important;
           border-radius: 3px !important;
           font-size: 12px !important;
           padding: 4px 12px !important;
       }
-      .stButton > button:hover { background-color: #b02850 !important; }
+      .stButton > button:hover { background-color: #922040 !important; }
       /* Textos gerais */
       p, div, span, label { color: #e0d0d0; }
     </style>
