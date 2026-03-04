@@ -1184,5 +1184,9 @@ def main():
     components.html(full_html, height=1750, scrolling=True)
 
 
-if __name__ == "__main__":
+import traceback as _tb
+try:
     main()
+except Exception as _e:
+    st.error(f"Erro ao executar o app: {_e}")
+    st.code(_tb.format_exc())
