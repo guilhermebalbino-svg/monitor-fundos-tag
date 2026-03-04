@@ -237,6 +237,14 @@ ANBIMA_CLIENT_ID     = ""   # ex: "a1b2c3d4e5f6..."
 ANBIMA_CLIENT_SECRET = ""   # ex: "AbCdEfGh1234..."
 
 # ──────────────────────────────────────────────────────────────────────────────
+# OBSERVAÇÕES  (editar aqui para atualizar a caixa de notas do monitor)
+# ──────────────────────────────────────────────────────────────────────────────
+OBSERVACOES = (
+    "O retorno do Treecorp está negativo devido às amortizações realizadas "
+    "no fundo, o que impactou o valor da cota."
+)
+
+# ──────────────────────────────────────────────────────────────────────────────
 # DATA FETCHING FUNCTIONS
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -1007,14 +1015,14 @@ def main():
       .stSpinner > div > div { border-top-color: #c0a080 !important; }
       /* Botão */
       .stButton > button {
-          background-color: #4a1525 !important;
-          color: #c8a8a8 !important;
+          background-color: #922040 !important;
+          color: #f0d8d8 !important;
           border: none !important;
           border-radius: 3px !important;
           font-size: 12px !important;
           padding: 4px 12px !important;
       }
-      .stButton > button:hover { background-color: #5e1a30 !important; }
+      .stButton > button:hover { background-color: #b02850 !important; }
       /* Textos gerais */
       p, div, span, label { color: #e0d0d0; }
     </style>
@@ -1022,19 +1030,9 @@ def main():
 
     # ── Sidebar — logo TAG ────────────────────────────────────────────────────
     with st.sidebar:
+        st.image("tag_logo.png", use_container_width=True)
         st.markdown("""
-        <div style="text-align:center; padding:24px 12px 16px 12px;">
-          <div style="font-family:'Georgia',serif; font-size:52px; font-weight:bold;
-                      color:#ffffff; letter-spacing:6px; line-height:1;">TAG</div>
-          <div style="width:75%; height:2px;
-                      background:linear-gradient(to right,transparent,#E8801A,transparent);
-                      margin:6px auto 6px auto;"></div>
-          <div style="font-family:'Georgia',serif; font-size:8px; color:#d4a86a;
-                      letter-spacing:6px; text-transform:uppercase; margin-top:2px;">
-            INVESTIMENTOS
-          </div>
-        </div>
-        <div style="padding:4px 16px 20px 16px;">
+        <div style="padding:4px 16px 20px 16px; margin-top:4px;">
           <div style="color:#7B2D40; font-size:9px; letter-spacing:1.5px;
                       text-transform:uppercase; font-weight:700; margin-bottom:8px;">
             MONITOR
@@ -1182,6 +1180,23 @@ def main():
 </html>"""
 
     components.html(full_html, height=1750, scrolling=True)
+
+    # ── Caixa de Observações ──────────────────────────────────────────────────
+    if OBSERVACOES:
+        st.markdown(f"""
+        <div style="margin-top:8px; padding:10px 16px 12px 16px;
+                    background:#120a0a; border-left:3px solid #E8801A;
+                    border-radius:0 3px 3px 0;
+                    font-family:'Segoe UI',Arial,sans-serif;">
+          <div style="color:#E8801A; font-size:10px; font-weight:700;
+                      letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px;">
+            ⚠ Observações
+          </div>
+          <div style="color:#c8b8a8; font-size:12px; line-height:1.6;">
+            {OBSERVACOES}
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 import traceback as _tb
