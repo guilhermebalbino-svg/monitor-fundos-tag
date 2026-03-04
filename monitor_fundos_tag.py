@@ -846,13 +846,13 @@ def fmt_pct(v, decimals=2) -> str:
 
 def _num_cell(v_str: str, raw, bg_override: str = "") -> str:
     """Gera célula numérica com cor condicional. Sem cor se raw for NaN."""
-    if pd.isna(raw):
+    if pd.isna(raw) or raw == 0:
         return (
             f'<td style="text-align:right; padding:5px 12px; '
             f'color:{COLOR_EMPTY_TEXT}; white-space:nowrap;">{v_str}</td>'
         )
-    bg   = COLOR_POS_BG   if raw >= 0 else COLOR_NEG_BG
-    txt  = COLOR_POS_TEXT if raw >= 0 else COLOR_NEG_TEXT
+    bg  = COLOR_POS_BG   if raw > 0 else COLOR_NEG_BG
+    txt = COLOR_POS_TEXT if raw > 0 else COLOR_NEG_TEXT
     if bg_override:
         bg = bg_override
     return (
@@ -1022,15 +1022,16 @@ def main():
     # ── Sidebar — logo TAG ────────────────────────────────────────────────────
     with st.sidebar:
         st.markdown("""
-        <div style="text-align:center; padding:28px 12px 16px 12px;">
-          <div style="font-family:'Georgia',serif; font-size:44px; font-weight:bold;
-                      color:#ffffff; letter-spacing:4px; line-height:1;">TAG</div>
-          <div style="font-family:'Georgia',serif; font-size:9px; color:#c0a080;
-                      letter-spacing:5px; text-transform:uppercase; margin-top:3px;">
+        <div style="text-align:center; padding:24px 12px 16px 12px;">
+          <div style="font-family:'Georgia',serif; font-size:52px; font-weight:bold;
+                      color:#ffffff; letter-spacing:6px; line-height:1;">TAG</div>
+          <div style="width:75%; height:2px;
+                      background:linear-gradient(to right,transparent,#E8801A,transparent);
+                      margin:6px auto 6px auto;"></div>
+          <div style="font-family:'Georgia',serif; font-size:8px; color:#d4a86a;
+                      letter-spacing:6px; text-transform:uppercase; margin-top:2px;">
             INVESTIMENTOS
           </div>
-          <div style="width:65%; height:1px; background:#7B2D40;
-                      margin:14px auto 0 auto;"></div>
         </div>
         <div style="padding:4px 16px 20px 16px;">
           <div style="color:#7B2D40; font-size:9px; letter-spacing:1.5px;
@@ -1055,7 +1056,7 @@ def main():
                           font-family:'Segoe UI',Arial,sans-serif; letter-spacing:0.4px;">
                 Monitor de Fundos Condominiais
               </div>
-              <div style="height:2px; background:linear-gradient(to right,#7B2D40,transparent);
+              <div style="height:2px; background:linear-gradient(to right,#E8801A,transparent);
                           margin-top:6px;"></div>
               <div style="color:#7a6060; font-size:11px; margin-top:6px;
                           font-family:'Segoe UI',Arial,sans-serif;">
