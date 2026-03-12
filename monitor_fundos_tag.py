@@ -10,6 +10,7 @@ import requests
 import io
 import zipfile
 from datetime import datetime, date, timedelta
+from zoneinfo import ZoneInfo
 import calendar
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -1059,7 +1060,7 @@ def main():
                           margin-top:6px;"></div>
               <div style="color:#7a6060; font-size:11px; margin-top:6px;
                           font-family:'Segoe UI',Arial,sans-serif;">
-                Atualizado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}
+                Atualizado em {datetime.now(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y às %H:%M')}
               </div>
             </div>
             """,
