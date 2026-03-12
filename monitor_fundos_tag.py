@@ -12,6 +12,7 @@ import zipfile
 from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 import calendar
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ──────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -755,14 +756,20 @@ def load_all_data():
     months_to_fetch.add((today.year - 1, 12))
     months_to_fetch.add((today.year - 2, 12))
 
-    # Sort and fetch
+    # Filtrar meses válidos
+    valid_months = [
+        (yr, mo) for yr, mo in sorted(months_to_fetch)
+        if not (yr < 2020 or yr > today.year or (yr == today.year and mo > today.month))
+    ]
+
+    # ── Downloads CVM em paralelo ─────────────────────────────────────────────
     all_dfs = []
-    for yr, mo in sorted(months_to_fetch):
-        if yr < 2020 or (yr > today.year) or (yr == today.year and mo > today.month):
-            continue
-        df = fetch_cvm_monthly(yr, mo)
-        if not df.empty:
-            all_dfs.append(df)
+    with ThreadPoolExecutor(max_workers=min(len(valid_months), 8)) as ex:
+        futures = {ex.submit(fetch_cvm_monthly, yr, mo): (yr, mo) for yr, mo in valid_months}
+        for fut in as_completed(futures):
+            df = fut.result()
+            if not df.empty:
+                all_dfs.append(df)
 
     if all_dfs:
         cvm_df = pd.concat(all_dfs, ignore_index=True)
@@ -770,26 +777,32 @@ def load_all_data():
     else:
         cvm_df = pd.DataFrame()
 
-    # Fetch benchmarks
+    # ── Benchmarks em paralelo ────────────────────────────────────────────────
     start_str = f"01/01/{today.year - 2}"
-    end_str = today.strftime("%d/%m/%Y")
+    end_str   = today.strftime("%d/%m/%Y")
+    start_ts  = int(datetime(today.year - 2, 1, 1).timestamp())
+    end_ts    = int(datetime.now().timestamp())
 
-    cdi_daily    = fetch_bcb_series(12,  start_str, end_str)  # CDI diário %
-    ipca_monthly = fetch_bcb_series(433, start_str, end_str)  # IPCA mensal %
+    with ThreadPoolExecutor(max_workers=9) as ex:
+        fut_cdi       = ex.submit(fetch_bcb_series, 12,  start_str, end_str)
+        fut_ipca      = ex.submit(fetch_bcb_series, 433, start_str, end_str)
+        fut_usdbrl    = ex.submit(fetch_bcb_series, 1,   start_str, end_str)
+        fut_ibov      = ex.submit(fetch_yf_ticker, "%5EBVSP",   start_ts, end_ts)
+        fut_imab      = ex.submit(fetch_yf_ticker, "IMAB11.SA", start_ts, end_ts)
+        fut_imab5     = ex.submit(fetch_yf_ticker, "B5P211.SA", start_ts, end_ts)
+        fut_imab5plus = ex.submit(fetch_yf_ticker, "IB5M11.SA", start_ts, end_ts)
+        fut_sofr      = ex.submit(fetch_sofr_series)
+        fut_ihfa      = ex.submit(fetch_ihfa_series)
 
-    # IMA-B via ETFs B3 (dados diários, mais precisos que série mensal BCB)
-    # IMAB11.SA = IMA-B (todos vencimentos)
-    # B5P211.SA = IMA-B5 (até 5 anos)
-    # IB5M11.SA = IMA-B5+ (acima de 5 anos)
-    start_ts = int(datetime(today.year - 2, 1, 1).timestamp())
-    end_ts   = int(datetime.now().timestamp())
-    ibov_daily       = fetch_yf_ticker("%5EBVSP",   start_ts, end_ts)
-    imab_prices      = fetch_yf_ticker("IMAB11.SA", start_ts, end_ts)
-    imab5_prices     = fetch_yf_ticker("B5P211.SA", start_ts, end_ts)
-    imab5plus_prices = fetch_yf_ticker("IB5M11.SA", start_ts, end_ts)
-    usdbrl_prices    = fetch_bcb_series(1, start_str, end_str)           # USD/BRL PTAX compra oficial BCB
-    sofr_daily       = fetch_sofr_series()
-    ihfa_series      = fetch_ihfa_series()   # vazio se sem credenciais configuradas
+        cdi_daily        = fut_cdi.result()
+        ipca_monthly     = fut_ipca.result()
+        usdbrl_prices    = fut_usdbrl.result()
+        ibov_daily       = fut_ibov.result()
+        imab_prices      = fut_imab.result()
+        imab5_prices     = fut_imab5.result()
+        imab5plus_prices = fut_imab5plus.result()
+        sofr_daily       = fut_sofr.result()
+        ihfa_series      = fut_ihfa.result()   # vazio se sem credenciais configuradas
 
     return (cvm_df, cdi_daily, imab_prices, imab5_prices,
             imab5plus_prices, ipca_monthly, ibov_daily,
