@@ -246,13 +246,19 @@ OBSERVACOES = (
     "no fundo, o que impactou o valor da cota."
 )
 
+# CNPJs monitorados — usado para filtrar os ZIPs da CVM logo na leitura,
+# evitando carregar ~15.000 fundos desnecessários em memória.
+_CNPJS_MONITORADOS = frozenset(
+    f["cnpj"] for g in FUND_GROUPS for f in g["funds"]
+)
+
 # ──────────────────────────────────────────────────────────────────────────────
 # DATA FETCHING FUNCTIONS
 # ──────────────────────────────────────────────────────────────────────────────
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_cvm_monthly(year: int, month: int) -> pd.DataFrame:
-    """Download CVM daily fund data for a given month."""
+    """Download CVM daily fund data for a given month, filtrando só os CNPJs monitorados."""
     url = (
         f"https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/"
         f"inf_diario_fi_{year}{month:02d}.zip"
@@ -261,7 +267,9 @@ def fetch_cvm_monthly(year: int, month: int) -> pd.DataFrame:
         r = requests.get(url, timeout=120)
         if r.status_code != 200:
             return pd.DataFrame()
-        z = zipfile.ZipFile(io.BytesIO(r.content))
+        raw = io.BytesIO(r.content)
+        del r  # libera memória do response imediatamente
+        z = zipfile.ZipFile(raw)
         df = pd.read_csv(
             z.open(z.namelist()[0]),
             sep=";",
@@ -269,7 +277,10 @@ def fetch_cvm_monthly(year: int, month: int) -> pd.DataFrame:
             usecols=["CNPJ_FUNDO_CLASSE", "DT_COMPTC", "VL_QUOTA"],
             dtype={"CNPJ_FUNDO_CLASSE": str, "DT_COMPTC": str, "VL_QUOTA": float},
         )
+        z.close()
+        # Filtrar ANTES do to_datetime — descarta ~99% das linhas
         df["CNPJ_norm"] = df["CNPJ_FUNDO_CLASSE"].str.replace(r"\D", "", regex=True)
+        df = df[df["CNPJ_norm"].isin(_CNPJS_MONITORADOS)].copy()
         df["DT_COMPTC"] = pd.to_datetime(df["DT_COMPTC"])
         return df
     except Exception:
@@ -764,7 +775,7 @@ def load_all_data():
 
     # ── Downloads CVM em paralelo ─────────────────────────────────────────────
     all_dfs = []
-    with ThreadPoolExecutor(max_workers=min(len(valid_months), 8)) as ex:
+    with ThreadPoolExecutor(max_workers=min(len(valid_months), 4)) as ex:
         futures = {ex.submit(fetch_cvm_monthly, yr, mo): (yr, mo) for yr, mo in valid_months}
         for fut in as_completed(futures):
             df = fut.result()
