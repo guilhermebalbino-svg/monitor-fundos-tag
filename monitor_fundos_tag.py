@@ -1068,8 +1068,8 @@ COLOR_POS_BG    = "#163316"   # verde escuro — retorno positivo
 COLOR_POS_TEXT  = "#8fd68f"   # verde claro — texto retorno positivo
 COLOR_NEG_BG    = "#331616"   # vermelho escuro — retorno negativo
 COLOR_NEG_TEXT  = "#d68f8f"   # vermelho claro — texto retorno negativo
-COLOR_EMPTY_BG  = "transparent"  # sem cor p/ células sem dado
-COLOR_EMPTY_TEXT = "#4a3a3a"  # cinza escuro p/ "-"
+COLOR_EMPTY_BG   = "#1a1212"   # fundo neutro p/ células sem dado (visível, sem destaque)
+COLOR_EMPTY_TEXT = "#554444"   # texto "-" visível sobre fundo escuro
 COLOR_META_TEXT = "#b09090"   # texto secundário (gestão, liquidez, etc.)
 COLOR_DATE_TEXT = "#c8b8b8"   # texto datas
 
@@ -1081,11 +1081,20 @@ def fmt_pct(v, decimals=2) -> str:
 
 
 def _num_cell(v_str: str, raw, bg_override: str = "") -> str:
-    """Gera célula numérica com cor condicional. Sem cor se raw for NaN."""
-    if pd.isna(raw) or raw == 0:
+    """Gera célula numérica com cor condicional."""
+    if pd.isna(raw):
+        # Sem dado: fundo neutro escuro para manter visual de célula
         return (
             f'<td style="text-align:right; padding:5px 12px; '
-            f'color:{COLOR_EMPTY_TEXT}; white-space:nowrap;">{v_str}</td>'
+            f'background:{COLOR_EMPTY_BG}; color:{COLOR_EMPTY_TEXT}; '
+            f'white-space:nowrap; font-variant-numeric:tabular-nums;">{v_str}</td>'
+        )
+    if raw == 0:
+        # Zero exato: mesmo fundo neutro, texto levemente mais visível
+        return (
+            f'<td style="text-align:right; padding:5px 12px; '
+            f'background:{COLOR_EMPTY_BG}; color:{COLOR_META_TEXT}; '
+            f'white-space:nowrap; font-variant-numeric:tabular-nums;">{v_str}</td>'
         )
     bg  = COLOR_POS_BG   if raw > 0 else COLOR_NEG_BG
     txt = COLOR_POS_TEXT if raw > 0 else COLOR_NEG_TEXT
