@@ -892,43 +892,37 @@ def fetch_ima_series(indice: str):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# BRITECH — retornos via Supabase (alimentado pelo script britech_to_supabase.py)
-# A API Britech só é acessível internamente; o script local grava no Supabase e
-# o monitor (rodando no Streamlit Cloud) lê de lá.
+# BRITECH — retornos via arquivo JSON no GitHub
+# O script local britech_to_supabase.py grava data/britech_cache.json e faz push.
+# O monitor lê o arquivo direto do raw.githubusercontent.com.
 # ──────────────────────────────────────────────────────────────────────────────
 
-SUPABASE_URL = st.secrets.get("SUPABASE_URL", "")
-SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "")
+_BRITECH_CACHE_URL = (
+    "https://raw.githubusercontent.com"
+    "/guilhermebalbino-svg/monitor-fundos-tag/main/data/britech_cache.json"
+)
 
 
 @st.cache_data(ttl=900, show_spinner=False)
-def _fetch_britech_supabase(id_cliente: int) -> dict:
-    """Lê a linha mais recente de britech_retornos para id_cliente."""
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return {}
+def _fetch_britech_cache() -> dict:
+    """Baixa data/britech_cache.json do GitHub (atualizado pelo script local)."""
     try:
-        url = (
-            f"{SUPABASE_URL}/rest/v1/britech_retornos"
-            f"?id_cliente=eq.{id_cliente}&select=*&limit=1"
-        )
-        r = requests.get(url, headers={
-            "apikey":        SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}",
-        }, timeout=15)
-        if r.status_code != 200 or not r.json():
-            return {}
-        return r.json()[0]
+        r = requests.get(_BRITECH_CACHE_URL, timeout=15)
+        if r.status_code == 200:
+            return r.json()
     except Exception:
-        return {}
+        pass
+    return {}
 
 
 def fetch_britech_fund_returns(id_cliente: int, britech_start: str,
                                ref_date: date) -> dict:
     """
-    Retornos M/ANO/1ANO/2ANOS lidos do Supabase (gravados pelo britech_to_supabase.py).
+    Retornos M/ANO/1ANO/2ANOS lidos do cache JSON no GitHub.
     D é NaN (FIPs não publicam cota diária).
     """
-    row = _fetch_britech_supabase(id_cliente)
+    cache = _fetch_britech_cache()
+    row   = cache.get(str(id_cliente), {})
     if not row:
         return {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
 
