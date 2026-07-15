@@ -1277,22 +1277,23 @@ def build_html_table(rows: list) -> str:
         else:  # fund
             ret      = row.get("returns", {})
             no_cota  = row.get("no_cota", False)
-            fp       = fmt_pct_zero if no_cota else fmt_pct
-            na_c     = COLOR_META_TEXT if no_cota else ""
             uc       = ret.get("ultima_cota")
             uc_s     = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
             tx       = row.get("tx_gestao", "-")
             liq      = row.get("liquidez",  "-")
             pub      = row.get("pub_alvo",  "-")
+            # D sem cota diária → 0.00% muted; demais colunas → "-" quando NaN
+            d_fp   = fmt_pct_zero if no_cota else fmt_pct
+            d_na_c = COLOR_META_TEXT if no_cota else ""
             html += (
                 f'<tr class="fund">'
                 f'<td class="name">{row["name"]}</td>'
                 f'<td class="meta">{tx}</td>'
-                f'{_num_cell(fp(ret.get("D")),     ret.get("D"),     na_color=na_c)}'
-                f'{_num_cell(fp(ret.get("M")),     ret.get("M"),     na_color=na_c)}'
-                f'{_num_cell(fp(ret.get("ANO")),   ret.get("ANO"),   na_color=na_c)}'
-                f'{_num_cell(fp(ret.get("1ANO")),  ret.get("1ANO"),  na_color=na_c)}'
-                f'{_num_cell(fp(ret.get("2ANOS")), ret.get("2ANOS"), na_color=na_c)}'
+                f'{_num_cell(d_fp(ret.get("D")),        ret.get("D"),     na_color=d_na_c)}'
+                f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
+                f'{_num_cell(fmt_pct(ret.get("ANO")),   ret.get("ANO"))}'
+                f'{_num_cell(fmt_pct(ret.get("1ANO")),  ret.get("1ANO"))}'
+                f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
                 f'<td class="date">{uc_s}</td>'
                 f'<td class="meta">{liq}</td>'
                 f'<td class="meta">{pub}</td>'
