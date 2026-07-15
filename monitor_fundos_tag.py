@@ -327,11 +327,8 @@ def fetch_bcb_series(series_code: int, start: str, end: str) -> pd.Series:
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_yf_ticker(symbol: str, start_ts: int, end_ts: int) -> pd.Series:
-    """Fetch daily closing prices from Yahoo Finance for any ticker."""
-    url = (
-        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
-        f"?period1={start_ts}&period2={end_ts}&interval=1d"
-    )
+    """Fetch daily closing prices from Yahoo Finance. Tenta query1 e query2."""
+    qs = f"?period1={start_ts}&period2={end_ts}&interval=1d"
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -339,27 +336,30 @@ def fetch_yf_ticker(symbol: str, start_ts: int, end_ts: int) -> pd.Series:
             "Chrome/120.0.0.0 Safari/537.36"
         )
     }
-    try:
-        r = requests.get(url, headers=headers, timeout=30)
-        if r.status_code != 200:
-            return pd.Series(dtype=float)
-        data = r.json()
-        result = data["chart"]["result"][0]
-        ts = result["timestamp"]
-        # Usa adjclose (retorno total, ajustado por dividendos e splits).
-        # ETFs IMA-B distribuem cupons de NTN-B como dividendos; sem esse ajuste
-        # o preço cai na data ex-dividendo e o retorno calculado fica subdimensionado.
-        adj_data = result["indicators"].get("adjclose")
-        if adj_data and adj_data[0].get("adjclose"):
-            closes = adj_data[0]["adjclose"]
-        else:
-            closes = result["indicators"]["quote"][0]["close"]
-        df = pd.DataFrame({"ts": ts, "close": closes})
-        df["date"] = pd.to_datetime(df["ts"], unit="s").dt.normalize()
-        df = df.dropna(subset=["close"]).set_index("date")["close"]
-        return df.sort_index()
-    except Exception:
-        return pd.Series(dtype=float)
+    for host in ("query1", "query2"):
+        url = f"https://{host}.finance.yahoo.com/v8/finance/chart/{symbol}{qs}"
+        try:
+            r = requests.get(url, headers=headers, timeout=30)
+            if r.status_code != 200:
+                continue
+            data = r.json()
+            result = data["chart"]["result"][0]
+            ts = result["timestamp"]
+            # Usa adjclose (retorno total, ajustado por dividendos e splits).
+            # ETFs IMA-B distribuem cupons de NTN-B como dividendos; sem esse ajuste
+            # o preço cai na data ex-dividendo e o retorno calculado fica subdimensionado.
+            adj_data = result["indicators"].get("adjclose")
+            if adj_data and adj_data[0].get("adjclose"):
+                closes = adj_data[0]["adjclose"]
+            else:
+                closes = result["indicators"]["quote"][0]["close"]
+            df = pd.DataFrame({"ts": ts, "close": closes})
+            df["date"] = pd.to_datetime(df["ts"], unit="s").dt.normalize()
+            df = df.dropna(subset=["close"]).set_index("date")["close"]
+            return df.sort_index()
+        except Exception:
+            continue
+    return pd.Series(dtype=float)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -820,15 +820,10 @@ def fetch_ima_anbima(indice: str) -> pd.Series:
         return pd.Series(dtype=float)
 
 
-def fetch_ima_maisretorno(indice: str) -> dict:
+def _fetch_maisretorno(slug: str) -> dict:
+    """Busca retornos de qualquer índice no Maisretorno via __NEXT_DATA__.
+    Retorna dict com M/ANO/1ANO/2ANOS em %. D=NaN (site não publica diário).
     """
-    IMA-B/5/5+ via Mais Retorno (fonte ANBIMA). Fallback gratuito, sem autenticação.
-    Retorna dict com M/ANO/1ANO/2ANOS já em %. D é NaN (dados mensais apenas).
-    """
-    slugs = {"IMA-B": "ima-b", "IMA-B 5": "ima-b-5", "IMA-B 5+": "ima-b-5-mais"}
-    slug = slugs.get(indice)
-    if not slug:
-        return {}
     try:
         r = requests.get(
             f"https://maisretorno.com/indice/{slug}",
@@ -855,6 +850,15 @@ def fetch_ima_maisretorno(indice: str) -> dict:
         }
     except Exception:
         return {}
+
+
+def fetch_ima_maisretorno(indice: str) -> dict:
+    """IMA-B/5/5+ via Mais Retorno. D=NaN (dados mensais apenas)."""
+    slugs = {"IMA-B": "ima-b", "IMA-B 5": "ima-b-5", "IMA-B 5+": "ima-b-5-mais"}
+    slug = slugs.get(indice)
+    if not slug:
+        return {}
+    return _fetch_maisretorno(slug)
 
 
 def fetch_ima_series(indice: str):
@@ -908,7 +912,7 @@ def compute_sofr_returns(sofr_daily: pd.Series, ref_date: date) -> dict:
 # MAIN DATA LOADING
 # ──────────────────────────────────────────────────────────────────────────────
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=900, show_spinner=False)
 def load_all_data():
     today = date.today()
 
@@ -1000,6 +1004,8 @@ def load_all_data():
         fut_imab5plus  = ex.submit(fetch_ima_series, "IMA-B 5+")
 
         cdi_daily        = fut_cdi.result()
+        if isinstance(cdi_daily, pd.Series) and cdi_daily.empty:
+            cdi_daily = _fetch_maisretorno("cdi") or cdi_daily
         ipca_monthly     = fut_ipca.result()
         usdbrl_prices    = fut_usdbrl.result()
         ibov_daily       = fut_ibov.result()
@@ -1025,6 +1031,8 @@ def get_benchmark_returns(key: str, ref_date: date,
     """Dispatcher: retorna dict de retornos para o benchmark indicado por key,
     todos cortados em ref_date (= última data de cota comum dos fundos)."""
     if key == "cdi":
+        if isinstance(cdi_daily, dict):
+            return cdi_daily
         return compute_cdi_returns(cdi_daily, ref_date)
     elif key == "imab":
         if isinstance(imab_prices, dict):
