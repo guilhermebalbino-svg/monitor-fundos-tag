@@ -892,61 +892,58 @@ def fetch_ima_series(indice: str):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# BRITECH — retornos de fundos sem cota CVM (FIPs, etc.)
+# BRITECH — retornos via Supabase (alimentado pelo script britech_to_supabase.py)
+# A API Britech só é acessível internamente; o script local grava no Supabase e
+# o monitor (rodando no Streamlit Cloud) lê de lá.
 # ──────────────────────────────────────────────────────────────────────────────
 
+SUPABASE_URL = st.secrets.get("SUPABASE_URL", "")
+SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "")
+
+
 @st.cache_data(ttl=900, show_spinner=False)
-def _fetch_britech_period(id_cliente: int, start: str, end: str) -> float:
-    """RentabilidadeCotaBruta para o período. Retorna NaN em falha ou sem credenciais."""
-    if not BRITECH_USER or not BRITECH_PASS:
-        return np.nan
+def _fetch_britech_supabase(id_cliente: int) -> dict:
+    """Lê a linha mais recente de britech_retornos para id_cliente."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return {}
     try:
         url = (
-            f"https://tag.britech.com.br/WS/api/Rentabilidade"
-            f"/BuscaRentabEstrategia_Periodo"
-            f"?idCliente={id_cliente}&dataInicio={start}&dataFim={end}"
+            f"{SUPABASE_URL}/rest/v1/britech_retornos"
+            f"?id_cliente=eq.{id_cliente}&select=*&limit=1"
         )
-        r = requests.get(url, auth=(BRITECH_USER, BRITECH_PASS),
-                         headers={"Accept": "application/json"}, timeout=30)
-        if r.status_code != 200:
-            return np.nan
-        data = r.json()
-        return float(data[0]["RentabilidadeCotaBruta"]) if data else np.nan
-    except Exception as e:
-        import traceback as _tb
-        st.session_state["_britech_last_error"] = f"{e}\n{_tb.format_exc()}"
-        return np.nan
+        r = requests.get(url, headers={
+            "apikey":        SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+        }, timeout=15)
+        if r.status_code != 200 or not r.json():
+            return {}
+        return r.json()[0]
+    except Exception:
+        return {}
 
 
 def fetch_britech_fund_returns(id_cliente: int, britech_start: str,
                                ref_date: date) -> dict:
     """
-    Retornos M/ANO/1ANO/2ANOS via Britech para fundos sem cota CVM.
+    Retornos M/ANO/1ANO/2ANOS lidos do Supabase (gravados pelo britech_to_supabase.py).
     D é NaN (FIPs não publicam cota diária).
-    britech_start: primeira data com cota disponível (YYYY-MM-DD).
     """
-    start_dt = date.fromisoformat(britech_start)
-    ref_str  = ref_date.isoformat()
+    row = _fetch_britech_supabase(id_cliente)
+    if not row:
+        return {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
 
-    def _get(ini: date) -> float:
-        if ini < start_dt:
-            ini = start_dt
-        if ini >= ref_date:
-            return np.nan
-        return _fetch_britech_period(id_cliente, ini.isoformat(), ref_str)
+    def _f(v):
+        return float(v) if v is not None else np.nan
 
-    m_ini   = ref_date.replace(day=1) - timedelta(days=1)
-    ano_ini = date(ref_date.year - 1, 12, 31)
-    y1_ini  = (pd.Timestamp(ref_date) - pd.DateOffset(years=1)).date()
-    y2_ini  = (pd.Timestamp(ref_date) - pd.DateOffset(years=2)).date()
+    ref = date.fromisoformat(row["ref_date"]) if row.get("ref_date") else ref_date
 
     return {
         "D":           np.nan,
-        "M":           _get(m_ini),
-        "ANO":         _get(ano_ini),
-        "1ANO":        _get(y1_ini),
-        "2ANOS":       _get(y2_ini),
-        "ultima_cota": ref_date,
+        "M":           _f(row.get("m_ret")),
+        "ANO":         _f(row.get("ano_ret")),
+        "1ANO":        _f(row.get("y1_ret")),
+        "2ANOS":       _f(row.get("y2_ret")),
+        "ultima_cota": ref,
     }
 
 
@@ -1532,11 +1529,6 @@ def main():
 </html>"""
 
     components.html(full_html, height=1800, scrolling=True)
-
-    # DEBUG temporário — remove após diagnosticar Britech
-    britech_err = st.session_state.get("_britech_last_error")
-    if britech_err:
-        st.warning(f"**Britech API error:** `{britech_err}`")
 
 
 import traceback as _tb
