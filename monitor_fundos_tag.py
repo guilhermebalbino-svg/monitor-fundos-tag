@@ -1095,13 +1095,13 @@ def fmt_pct_zero(v, decimals=2) -> str:
     return f"{v:.{decimals}f}%"
 
 
-def _num_cell(v_str: str, raw, bg_override: str = "") -> str:
+def _num_cell(v_str: str, raw, bg_override: str = "", na_color: str = "") -> str:
     """Gera célula numérica com cor condicional."""
     if pd.isna(raw):
-        # Sem dado: fundo neutro escuro para manter visual de célula
+        txt = na_color or COLOR_EMPTY_TEXT
         return (
             f'<td style="text-align:right; padding:5px 12px; '
-            f'background:{COLOR_EMPTY_BG}; color:{COLOR_EMPTY_TEXT}; '
+            f'background:{COLOR_EMPTY_BG}; color:{txt}; '
             f'white-space:nowrap; font-variant-numeric:tabular-nums;">{v_str}</td>'
         )
     if raw == 0:
@@ -1189,19 +1189,21 @@ def build_html_table(rows: list) -> str:
             )
 
         elif rtype == "benchmark":
-            ret  = row.get("returns", {})
-            fp   = fmt_pct_zero if row.get("key", "").startswith("imab") else fmt_pct
-            uc   = ret.get("ultima_cota")
-            uc_s = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
+            ret      = row.get("returns", {})
+            is_imab  = row.get("key", "").startswith("imab")
+            fp       = fmt_pct_zero if is_imab else fmt_pct
+            na_c     = COLOR_META_TEXT if is_imab else ""
+            uc       = ret.get("ultima_cota")
+            uc_s     = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
             html += (
                 f'<tr class="bmark">'
                 f'<td class="bname">{row["name"]}</td>'
                 f'<td class="meta">-</td>'
-                f'{_num_cell(fp(ret.get("D")),     ret.get("D"))}'
-                f'{_num_cell(fp(ret.get("M")),     ret.get("M"))}'
-                f'{_num_cell(fp(ret.get("ANO")),   ret.get("ANO"))}'
-                f'{_num_cell(fp(ret.get("1ANO")),  ret.get("1ANO"))}'
-                f'{_num_cell(fp(ret.get("2ANOS")), ret.get("2ANOS"))}'
+                f'{_num_cell(fp(ret.get("D")),     ret.get("D"),     na_color=na_c)}'
+                f'{_num_cell(fp(ret.get("M")),     ret.get("M"),     na_color=na_c)}'
+                f'{_num_cell(fp(ret.get("ANO")),   ret.get("ANO"),   na_color=na_c)}'
+                f'{_num_cell(fp(ret.get("1ANO")),  ret.get("1ANO"),  na_color=na_c)}'
+                f'{_num_cell(fp(ret.get("2ANOS")), ret.get("2ANOS"), na_color=na_c)}'
                 f'<td class="date">{uc_s}</td>'
                 f'<td class="meta">-</td>'
                 f'<td class="meta">-</td>'
