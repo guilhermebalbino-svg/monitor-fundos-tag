@@ -912,7 +912,9 @@ def _fetch_britech_period(id_cliente: int, start: str, end: str) -> float:
             return np.nan
         data = r.json()
         return float(data[0]["RentabilidadeCotaBruta"]) if data else np.nan
-    except Exception:
+    except Exception as e:
+        import traceback as _tb
+        st.session_state["_britech_last_error"] = f"{e}\n{_tb.format_exc()}"
         return np.nan
 
 
@@ -1530,6 +1532,11 @@ def main():
 </html>"""
 
     components.html(full_html, height=1800, scrolling=True)
+
+    # DEBUG temporário — remove após diagnosticar Britech
+    britech_err = st.session_state.get("_britech_last_error")
+    if britech_err:
+        st.warning(f"**Britech API error:** `{britech_err}`")
 
 
 import traceback as _tb
