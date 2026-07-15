@@ -1275,21 +1275,24 @@ def build_html_table(rows: list) -> str:
             )
 
         else:  # fund
-            ret  = row.get("returns", {})
-            uc   = ret.get("ultima_cota")
-            uc_s = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
-            tx   = row.get("tx_gestao", "-")
-            liq  = row.get("liquidez",  "-")
-            pub  = row.get("pub_alvo",  "-")
+            ret      = row.get("returns", {})
+            no_cota  = row.get("no_cota", False)
+            fp       = fmt_pct_zero if no_cota else fmt_pct
+            na_c     = COLOR_META_TEXT if no_cota else ""
+            uc       = ret.get("ultima_cota")
+            uc_s     = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
+            tx       = row.get("tx_gestao", "-")
+            liq      = row.get("liquidez",  "-")
+            pub      = row.get("pub_alvo",  "-")
             html += (
                 f'<tr class="fund">'
                 f'<td class="name">{row["name"]}</td>'
                 f'<td class="meta">{tx}</td>'
-                f'{_num_cell(fmt_pct(ret.get("D")),     ret.get("D"))}'
-                f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
-                f'{_num_cell(fmt_pct(ret.get("ANO")),   ret.get("ANO"))}'
-                f'{_num_cell(fmt_pct(ret.get("1ANO")),  ret.get("1ANO"))}'
-                f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
+                f'{_num_cell(fp(ret.get("D")),     ret.get("D"),     na_color=na_c)}'
+                f'{_num_cell(fp(ret.get("M")),     ret.get("M"),     na_color=na_c)}'
+                f'{_num_cell(fp(ret.get("ANO")),   ret.get("ANO"),   na_color=na_c)}'
+                f'{_num_cell(fp(ret.get("1ANO")),  ret.get("1ANO"),  na_color=na_c)}'
+                f'{_num_cell(fp(ret.get("2ANOS")), ret.get("2ANOS"), na_color=na_c)}'
                 f'<td class="date">{uc_s}</td>'
                 f'<td class="meta">{liq}</td>'
                 f'<td class="meta">{pub}</td>'
@@ -1458,6 +1461,7 @@ def main():
                 "liquidez": fund["liquidez"],
                 "pub_alvo": fund["pub_alvo"],
                 "returns":  returns,
+                "no_cota":  bool(britech_id),
             })
 
         for bm in group["benchmarks"]:
