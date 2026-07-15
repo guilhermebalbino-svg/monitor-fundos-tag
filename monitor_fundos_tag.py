@@ -852,15 +852,13 @@ def _fetch_maisretorno(slug: str) -> dict:
             return {}
         data = json.loads(m.group(1))
         tf = data["props"]["pageProps"]["stats"]["stats"]["timeframe"]
-        lu_ms = data["props"]["pageProps"].get("last_update", 0)
-        lu_date = datetime.fromtimestamp(lu_ms / 1000).date() if lu_ms else date.today()
         return {
             "D":           np.nan,
             "M":           tf["mtd"]["profitability"],
             "ANO":         tf["ytd"]["profitability"],
             "1ANO":        tf["last_12_months"]["profitability"],
             "2ANOS":       tf["last_24_months"]["profitability"],
-            "ultima_cota": lu_date,
+            "ultima_cota": np.nan,
         }
     except Exception:
         return {}
