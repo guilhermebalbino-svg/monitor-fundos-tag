@@ -211,12 +211,13 @@ FUND_GROUPS = [
         "group": "FIP/TECH",
         "funds": [
             {
-                "cnpj": "65650605000173",
-                "name": "FIP TECH",
-                "tx_gestao": "N/A",
-                "liquidez": "Fechado",
-                "pub_alvo": "Profissional",
-                "max_stale_days": 180,
+                "cnpj":          "65650605000173",
+                "name":          "TAG PRIVATE GROWTH III FIP MULTI RESP LTDA",
+                "tx_gestao":     "0,50%",
+                "liquidez":      "Fechado",
+                "pub_alvo":      "Profissional",
+                "britech_id":    2936,
+                "britech_start": "2026-05-20",
             },
         ],
         "benchmarks": [
@@ -261,6 +262,12 @@ COMDINHEIRO_BEARER_TOKEN = st.secrets.get("COMDINHEIRO_BEARER_TOKEN", "")
 # ──────────────────────────────────────────────────────────────────────────────
 ANBIMA_CLIENT_ID     = st.secrets.get("ANBIMA_CLIENT_ID",     "")
 ANBIMA_CLIENT_SECRET = st.secrets.get("ANBIMA_CLIENT_SECRET", "")
+
+# ──────────────────────────────────────────────────────────────────────────────
+# BRITECH API CREDENTIALS  — Basic Auth para fundos sem cota CVM (FIPs, etc.)
+# ──────────────────────────────────────────────────────────────────────────────
+BRITECH_USER = st.secrets.get("BRITECH_USER", "")
+BRITECH_PASS = st.secrets.get("BRITECH_PASS", "")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # OBSERVAÇÕES  (editar aqui para atualizar a caixa de notas do monitor)
@@ -884,6 +891,63 @@ def fetch_ima_series(indice: str):
     return fetch_ima_maisretorno(indice)
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# BRITECH — retornos de fundos sem cota CVM (FIPs, etc.)
+# ──────────────────────────────────────────────────────────────────────────────
+
+@st.cache_data(ttl=900, show_spinner=False)
+def _fetch_britech_period(id_cliente: int, start: str, end: str) -> float:
+    """RentabilidadeCotaBruta para o período. Retorna NaN em falha ou sem credenciais."""
+    if not BRITECH_USER or not BRITECH_PASS:
+        return np.nan
+    try:
+        url = (
+            f"https://tag.britech.com.br/WS/api/Rentabilidade"
+            f"/BuscaRentabEstrategia_Periodo"
+            f"?idCliente={id_cliente}&dataInicio={start}&dataFim={end}"
+        )
+        r = requests.get(url, auth=(BRITECH_USER, BRITECH_PASS),
+                         headers={"Accept": "application/json"}, timeout=30)
+        if r.status_code != 200:
+            return np.nan
+        data = r.json()
+        return float(data[0]["RentabilidadeCotaBruta"]) if data else np.nan
+    except Exception:
+        return np.nan
+
+
+def fetch_britech_fund_returns(id_cliente: int, britech_start: str,
+                               ref_date: date) -> dict:
+    """
+    Retornos M/ANO/1ANO/2ANOS via Britech para fundos sem cota CVM.
+    D é NaN (FIPs não publicam cota diária).
+    britech_start: primeira data com cota disponível (YYYY-MM-DD).
+    """
+    start_dt = date.fromisoformat(britech_start)
+    ref_str  = ref_date.isoformat()
+
+    def _get(ini: date) -> float:
+        if ini < start_dt:
+            ini = start_dt
+        if ini >= ref_date:
+            return np.nan
+        return _fetch_britech_period(id_cliente, ini.isoformat(), ref_str)
+
+    m_ini   = ref_date.replace(day=1) - timedelta(days=1)
+    ano_ini = date(ref_date.year - 1, 12, 31)
+    y1_ini  = (pd.Timestamp(ref_date) - pd.DateOffset(years=1)).date()
+    y2_ini  = (pd.Timestamp(ref_date) - pd.DateOffset(years=2)).date()
+
+    return {
+        "D":           np.nan,
+        "M":           _get(m_ini),
+        "ANO":         _get(ano_ini),
+        "1ANO":        _get(y1_ini),
+        "2ANOS":       _get(y2_ini),
+        "ultima_cota": ref_date,
+    }
+
+
 def compute_sofr_returns(sofr_daily: pd.Series, ref_date: date) -> dict:
     """SOFR acumulado até ref_date."""
     if sofr_daily.empty:
@@ -1376,9 +1440,15 @@ def main():
         table_rows.append({"type": "section", "name": group["group"]})
 
         for fund in group["funds"]:
-            cnpj      = fund["cnpj"]
-            max_stale = fund.get("max_stale_days", 45)
-            if cnpj in quota_map:
+            cnpj       = fund["cnpj"]
+            max_stale  = fund.get("max_stale_days", 45)
+            britech_id = fund.get("britech_id")
+
+            if britech_id:
+                returns = fetch_britech_fund_returns(
+                    britech_id, fund["britech_start"], ref_date
+                )
+            elif cnpj in quota_map:
                 returns = compute_fund_returns(quota_map[cnpj], today)
                 uc = returns.get("ultima_cota")
                 if uc and (today - uc).days > max_stale:
