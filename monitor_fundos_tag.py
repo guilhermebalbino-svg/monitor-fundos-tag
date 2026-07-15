@@ -7,6 +7,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
+import re
+import json
 import io
 import zipfile
 from datetime import datetime, date, timedelta
@@ -819,15 +821,59 @@ def fetch_ima_anbima(indice: str) -> pd.Series:
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def fetch_ima_series(indice: str) -> pd.Series:
+def fetch_ima_maisretorno(indice: str) -> dict:
     """
-    IMA-B/5/5+ – tenta ComDinheiro (Bearer Token) primeiro, depois ANBIMA.
-    indice: 'IMA-B', 'IMA-B 5' ou 'IMA-B 5+'
+    IMA-B/5/5+ via Mais Retorno (fonte ANBIMA). Fallback gratuito, sem autenticação.
+    Retorna dict com M/ANO/1ANO/2ANOS já em %. D é NaN (dados mensais apenas).
+    """
+    slugs = {"IMA-B": "ima-b", "IMA-B 5": "ima-b-5", "IMA-B 5+": "ima-b-5-mais"}
+    slug = slugs.get(indice)
+    if not slug:
+        return {}
+    try:
+        r = requests.get(
+            f"https://maisretorno.com/indice/{slug}",
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+            timeout=15,
+        )
+        m = re.search(
+            r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+            r.text, re.DOTALL,
+        )
+        if not m:
+            return {}
+        data = json.loads(m.group(1))
+        tf = data["props"]["pageProps"]["stats"]["stats"]["timeframe"]
+        lu_ms = data["props"]["pageProps"].get("last_update", 0)
+        lu_date = datetime.fromtimestamp(lu_ms / 1000).date() if lu_ms else date.today()
+        return {
+            "D":           np.nan,
+            "M":           tf["mtd"]["profitability"],
+            "ANO":         tf["ytd"]["profitability"],
+            "1ANO":        tf["last_12_months"]["profitability"],
+            "2ANOS":       tf["last_24_months"]["profitability"],
+            "ultima_cota": lu_date,
+        }
+    except Exception:
+        return {}
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_ima_series(indice: str):
+    """
+    IMA-B/5/5+ – tenta ComDinheiro (Bearer Token) → ANBIMA → Mais Retorno.
+    Retorna pd.Series (série diária) ou dict (retornos pré-calculados, D=NaN).
     """
     s = fetch_ima_comdinheiro(indice)
     if not s.empty:
         return s
-    return fetch_ima_anbima(indice)
+    s = fetch_ima_anbima(indice)
+    if not s.empty:
+        return s
+    d = fetch_ima_maisretorno(indice)
+    if d:
+        return d
+    return pd.Series(dtype=float)
 
 
 def compute_sofr_returns(sofr_daily: pd.Series, ref_date: date) -> dict:
@@ -984,10 +1030,16 @@ def get_benchmark_returns(key: str, ref_date: date,
     if key == "cdi":
         return compute_cdi_returns(cdi_daily, ref_date)
     elif key == "imab":
+        if isinstance(imab_prices, dict):
+            return imab_prices
         return compute_price_returns(imab_prices, ref_date)
     elif key == "imab5":
+        if isinstance(imab5_prices, dict):
+            return imab5_prices
         return compute_price_returns(imab5_prices, ref_date)
     elif key == "imab5plus":
+        if isinstance(imab5plus_prices, dict):
+            return imab5plus_prices
         return compute_price_returns(imab5plus_prices, ref_date)
     elif key == "ibovespa":
         return compute_price_returns(ibov_daily, ref_date)
