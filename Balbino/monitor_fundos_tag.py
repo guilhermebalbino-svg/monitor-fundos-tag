@@ -130,6 +130,13 @@ FUND_GROUPS = [
                 "liquidez": "D32",
                 "pub_alvo": "Qualificado",
             },
+            {
+                "cnpj": "62222549000188",
+                "name": "TAG NOVOS GESTORES FIF AÇÕES",
+                "tx_gestao": "N/A",
+                "liquidez": "D30",
+                "pub_alvo": "Qualificado",
+            },
         ],
         "benchmarks": [
             {"name": "IBOVESPA - BENCHMARK", "key": "ibovespa"},
