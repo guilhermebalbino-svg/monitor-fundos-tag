@@ -1076,7 +1076,7 @@ COLOR_DATE_TEXT = "#c8b8b8"   # texto datas
 
 def fmt_pct(v, decimals=2) -> str:
     if pd.isna(v):
-        return "-"
+        return f"{0:.{decimals}f}%"
     return f"{v:.{decimals}f}%"
 
 
