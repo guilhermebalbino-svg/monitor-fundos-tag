@@ -199,6 +199,22 @@ FUND_GROUPS = [
         ],
     },
     {
+        "group": "FIP/TECH",
+        "funds": [
+            {
+                "cnpj": "65650605000173",
+                "name": "FIP TECH",
+                "tx_gestao": "N/A",
+                "liquidez": "Fechado",
+                "pub_alvo": "Profissional",
+                "max_stale_days": 180,
+            },
+        ],
+        "benchmarks": [
+            {"name": "70% USD/BRL + 30% CDI - BENCHMARK", "key": "usdbrl_cdi_blend"},
+        ],
+    },
+    {
         "group": "PREVIDÊNCIA",
         "funds": [
             {
@@ -229,14 +245,13 @@ FUND_GROUPS = [
 #   1. Acesse https://www.comdinheiro.com.br com login Tag.invest / Tag.invest1!
 #   2. Vá em "Minha Conta" → "API" → gere / copie o Bearer Token
 #   3. Cole abaixo:
-COMDINHEIRO_BEARER_TOKEN = ""   # ex: "eyJhbGciOiJSUzI1NiIsInR5..."
+COMDINHEIRO_BEARER_TOKEN = st.secrets.get("COMDINHEIRO_BEARER_TOKEN", "")
 
 # ──────────────────────────────────────────────────────────────────────────────
-# ANBIMA API CREDENTIALS  (alternativa – caso prefira usar ANBIMA diretamente)
+# ANBIMA API CREDENTIALS  — lidos do st.secrets (secrets.toml no Streamlit Cloud)
 # ──────────────────────────────────────────────────────────────────────────────
-# Cadastro GRATUITO em: https://developers.anbima.com.br/
-ANBIMA_CLIENT_ID     = ""   # ex: "a1b2c3d4e5f6..."
-ANBIMA_CLIENT_SECRET = ""   # ex: "AbCdEfGh1234..."
+ANBIMA_CLIENT_ID     = st.secrets.get("ANBIMA_CLIENT_ID",     "")
+ANBIMA_CLIENT_SECRET = st.secrets.get("ANBIMA_CLIENT_SECRET", "")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # OBSERVAÇÕES  (editar aqui para atualizar a caixa de notas do monitor)
@@ -329,7 +344,14 @@ def fetch_yf_ticker(symbol: str, start_ts: int, end_ts: int) -> pd.Series:
         data = r.json()
         result = data["chart"]["result"][0]
         ts = result["timestamp"]
-        closes = result["indicators"]["quote"][0]["close"]
+        # Usa adjclose (retorno total, ajustado por dividendos e splits).
+        # ETFs IMA-B distribuem cupons de NTN-B como dividendos; sem esse ajuste
+        # o preço cai na data ex-dividendo e o retorno calculado fica subdimensionado.
+        adj_data = result["indicators"].get("adjclose")
+        if adj_data and adj_data[0].get("adjclose"):
+            closes = adj_data[0]["adjclose"]
+        else:
+            closes = result["indicators"]["quote"][0]["close"]
         df = pd.DataFrame({"ts": ts, "close": closes})
         df["date"] = pd.to_datetime(df["ts"], unit="s").dt.normalize()
         df = df.dropna(subset=["close"]).set_index("date")["close"]
@@ -534,6 +556,25 @@ def compute_ipca6_returns(ipca_monthly: pd.Series, ref_date: date) -> dict:
             "1ANO": y1_ret, "2ANOS": y2_ret, "ultima_cota": ref_date}
 
 
+def compute_usdbrl_cdi_blend_returns(
+    usdbrl_prices: pd.Series, cdi_daily: pd.Series,
+    ref_date: date,
+    w_usd: float = 0.70, w_cdi: float = 0.30,
+) -> dict:
+    """
+    Blended benchmark: w_usd * USD/BRL + w_cdi * CDI acumulado.
+    Retorno do blend em cada período = soma ponderada dos retornos individuais.
+    """
+    usd_r = compute_price_returns(usdbrl_prices, ref_date)
+    cdi_r = compute_cdi_returns(cdi_daily, ref_date)
+    result: dict = {"ultima_cota": usd_r.get("ultima_cota") or cdi_r.get("ultima_cota")}
+    for period in ["D", "M", "ANO", "1ANO", "2ANOS"]:
+        u = usd_r.get(period, np.nan)
+        c = cdi_r.get(period, np.nan)
+        result[period] = np.nan if (pd.isna(u) or pd.isna(c)) else w_usd * u + w_cdi * c
+    return result
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_sofr_series() -> pd.Series:
     """SOFR diário do FRED (taxa % ao dia)."""
@@ -682,6 +723,113 @@ def fetch_ihfa_series() -> pd.Series:
     return fetch_ihfa_anbima()
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_ima_comdinheiro(indicador: str) -> pd.Series:
+    """
+    Busca nível diário de índice IMA via ComDinheiro EndPoint002.
+    indicador: 'IMA-B', 'IMA-B 5' ou 'IMA-B 5+'.
+    Retorna pd.Series vazio se COMDINHEIRO_BEARER_TOKEN não configurado.
+    """
+    if not COMDINHEIRO_BEARER_TOKEN:
+        return pd.Series(dtype=float)
+
+    today = date.today()
+    start = f"01/01/{today.year - 2}"
+    end   = today.strftime("%d/%m/%Y")
+
+    try:
+        r = requests.post(
+            "https://www.comdinheiro.com.br/Clientes/API/EndPoint002.php",
+            params={"code": COMDINHEIRO_BEARER_TOKEN},
+            data={
+                "p":             "HistoricoIndicadores",
+                "Indicadores":   indicador,
+                "dt_ini":        start,
+                "dt_fim":        end,
+                "periodicidade": "D",
+                "format":        "json3",
+            },
+            headers={
+                "Authorization": f"Bearer {COMDINHEIRO_BEARER_TOKEN}",
+                "User-Agent":    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            },
+            timeout=30,
+        )
+        if r.status_code != 200:
+            return pd.Series(dtype=float)
+        data = r.json()
+        if isinstance(data, list):
+            df = pd.DataFrame(data)
+            if "data" in df.columns and "valor" in df.columns:
+                df["data"] = pd.to_datetime(df["data"], dayfirst=True)
+                df["valor"] = pd.to_numeric(df["valor"], errors="coerce")
+                return df.dropna().set_index("data")["valor"].sort_index()
+        inner = (data.get("data") or data.get("dados") or data.get("result") or {})
+        if isinstance(inner, dict):
+            ind_data = inner.get(indicador, {})
+            dates  = ind_data.get("dates",  ind_data.get("data",    []))
+            values = ind_data.get("values", ind_data.get("valores", []))
+            if dates and values:
+                idx = pd.to_datetime(dates, dayfirst=True)
+                s = pd.Series(pd.to_numeric(values, errors="coerce"), index=idx)
+                return s.dropna().sort_index()
+        return pd.Series(dtype=float)
+    except Exception:
+        return pd.Series(dtype=float)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_ima_anbima(indice: str) -> pd.Series:
+    """
+    Busca nível diário de índice IMA via API ANBIMA (fallback).
+    indice: 'IMA-B', 'IMA-B 5' ou 'IMA-B 5+' (conforme nomenclatura ANBIMA).
+    Retorna pd.Series vazio se credenciais não configuradas.
+    """
+    token = fetch_anbima_token()
+    if not token:
+        return pd.Series(dtype=float)
+
+    today = date.today()
+    start = f"01/01/{today.year - 2}"
+    end   = today.strftime("%d/%m/%Y")
+    url   = (
+        f"https://api.anbima.com.br/feed/precos-indices/v1/indices/"
+        f"historico-por-indices?indice={requests.utils.quote(indice)}"
+        f"&dataInicio={start}&dataFim={end}"
+    )
+    try:
+        r = requests.get(
+            url,
+            headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+            timeout=30,
+        )
+        if r.status_code != 200:
+            return pd.Series(dtype=float)
+        data = r.json()
+        records = data if isinstance(data, list) else data.get("dados", data.get("result", []))
+        df = pd.DataFrame(records)
+        if df.empty or "numIndice" not in df.columns:
+            return pd.Series(dtype=float)
+        date_col = "data" if "data" in df.columns else df.columns[0]
+        df[date_col] = pd.to_datetime(df[date_col], dayfirst=True)
+        df["numIndice"] = pd.to_numeric(df["numIndice"], errors="coerce")
+        return df.dropna(subset=["numIndice"]).set_index(date_col)["numIndice"].sort_index()
+    except Exception:
+        return pd.Series(dtype=float)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_ima_series(indice: str) -> pd.Series:
+    """
+    IMA-B/5/5+ – tenta ComDinheiro (Bearer Token) primeiro, depois ANBIMA.
+    indice: 'IMA-B', 'IMA-B 5' ou 'IMA-B 5+'
+    """
+    s = fetch_ima_comdinheiro(indice)
+    if not s.empty:
+        return s
+    return fetch_ima_anbima(indice)
+
+
 def compute_sofr_returns(sofr_daily: pd.Series, ref_date: date) -> dict:
     """SOFR acumulado até ref_date."""
     if sofr_daily.empty:
@@ -794,26 +942,29 @@ def load_all_data():
     start_ts  = int(datetime(today.year - 2, 1, 1).timestamp())
     end_ts    = int(datetime.now().timestamp())
 
-    with ThreadPoolExecutor(max_workers=9) as ex:
-        fut_cdi       = ex.submit(fetch_bcb_series, 12,  start_str, end_str)
-        fut_ipca      = ex.submit(fetch_bcb_series, 433, start_str, end_str)
-        fut_usdbrl    = ex.submit(fetch_bcb_series, 1,   start_str, end_str)
-        fut_ibov      = ex.submit(fetch_yf_ticker, "%5EBVSP",   start_ts, end_ts)
-        fut_imab      = ex.submit(fetch_yf_ticker, "IMAB11.SA", start_ts, end_ts)
-        fut_imab5     = ex.submit(fetch_yf_ticker, "B5P211.SA", start_ts, end_ts)
-        fut_imab5plus = ex.submit(fetch_yf_ticker, "IB5M11.SA", start_ts, end_ts)
-        fut_sofr      = ex.submit(fetch_sofr_series)
-        fut_ihfa      = ex.submit(fetch_ihfa_series)
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        fut_cdi        = ex.submit(fetch_bcb_series, 12,  start_str, end_str)
+        fut_ipca       = ex.submit(fetch_bcb_series, 433, start_str, end_str)
+        fut_usdbrl     = ex.submit(fetch_bcb_series, 1,   start_str, end_str)
+        fut_ibov       = ex.submit(fetch_yf_ticker, "%5EBVSP", start_ts, end_ts)
+        fut_sofr       = ex.submit(fetch_sofr_series)
+        fut_ihfa       = ex.submit(fetch_ihfa_series)
+        # IMA-B via ANBIMA API (fonte oficial, retorno total).
+        # Requer ANBIMA_CLIENT_ID + ANBIMA_CLIENT_SECRET em st.secrets.
+        # Retorna série vazia se sem credenciais → retornos exibidos como "-".
+        fut_imab       = ex.submit(fetch_ima_series, "IMA-B")
+        fut_imab5      = ex.submit(fetch_ima_series, "IMA-B 5")
+        fut_imab5plus  = ex.submit(fetch_ima_series, "IMA-B 5+")
 
         cdi_daily        = fut_cdi.result()
         ipca_monthly     = fut_ipca.result()
         usdbrl_prices    = fut_usdbrl.result()
         ibov_daily       = fut_ibov.result()
+        sofr_daily       = fut_sofr.result()
+        ihfa_series      = fut_ihfa.result()
         imab_prices      = fut_imab.result()
         imab5_prices     = fut_imab5.result()
         imab5plus_prices = fut_imab5plus.result()
-        sofr_daily       = fut_sofr.result()
-        ihfa_series      = fut_ihfa.result()   # vazio se sem credenciais configuradas
 
     return (cvm_df, cdi_daily, imab_prices, imab5_prices,
             imab5plus_prices, ipca_monthly, ibov_daily,
@@ -848,6 +999,8 @@ def get_benchmark_returns(key: str, ref_date: date,
         return compute_sofr_returns(sofr_daily, ref_date)
     elif key == "ihfa":
         return compute_price_returns(ihfa_series, ref_date)
+    elif key == "usdbrl_cdi_blend":
+        return compute_usdbrl_cdi_blend_returns(usdbrl_prices, cdi_daily, ref_date)
     else:
         return {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
 
@@ -1176,17 +1329,18 @@ def main():
     # ── Renderiza tabela ──────────────────────────────────────────────────────
     table_html = build_html_table(table_rows)
 
-    if not ihfa_series.empty:
-        ihfa_src  = "ComDinheiro" if COMDINHEIRO_BEARER_TOKEN else "ANBIMA"
-        ihfa_note = f" | IHFA: {ihfa_src}"
+    if COMDINHEIRO_BEARER_TOKEN:
+        idx_src = "ComDinheiro"
     else:
-        ihfa_note = ""
+        idx_src = "ANBIMA" if (ANBIMA_CLIENT_ID and ANBIMA_CLIENT_SECRET) else None
+
+    ihfa_note = f" | IHFA+IMA-B: {idx_src}" if idx_src else ""
 
     footer = (
         "<div style='margin-top:20px; color:#4a3535; font-size:10px;"
         " text-align:center; font-family:Segoe UI,Arial,sans-serif;'>"
         "Fonte: CVM (cotas diárias) · BCB SGS (CDI / IPCA / PTAX) · "
-        "Yahoo Finance (IBOVESPA / ETFs IMA-B) · FRED (SOFR)"
+        "Yahoo Finance (IBOVESPA) · FRED (SOFR)"
         f"{ihfa_note} · Retornos brutos de IR e taxas."
         "</div>"
     )
