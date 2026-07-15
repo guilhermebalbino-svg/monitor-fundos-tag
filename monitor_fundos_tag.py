@@ -820,7 +820,6 @@ def fetch_ima_anbima(indice: str) -> pd.Series:
         return pd.Series(dtype=float)
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_ima_maisretorno(indice: str) -> dict:
     """
     IMA-B/5/5+ via Mais Retorno (fonte ANBIMA). Fallback gratuito, sem autenticação.
@@ -858,22 +857,20 @@ def fetch_ima_maisretorno(indice: str) -> dict:
         return {}
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_ima_series(indice: str):
     """
-    IMA-B/5/5+ – tenta ComDinheiro (Bearer Token) → ANBIMA → Mais Retorno.
-    Retorna pd.Series (série diária) ou dict (retornos pré-calculados, D=NaN).
+    IMA-B/5/5+ – Mais Retorno (gratuito) como base; upgrade para ComDinheiro
+    ou ANBIMA se credentials configuradas (retorno total diário completo).
     """
-    s = fetch_ima_comdinheiro(indice)
-    if not s.empty:
-        return s
-    s = fetch_ima_anbima(indice)
-    if not s.empty:
-        return s
-    d = fetch_ima_maisretorno(indice)
-    if d:
-        return d
-    return pd.Series(dtype=float)
+    if COMDINHEIRO_BEARER_TOKEN:
+        s = fetch_ima_comdinheiro(indice)
+        if not s.empty:
+            return s
+    if ANBIMA_CLIENT_ID and ANBIMA_CLIENT_SECRET:
+        s = fetch_ima_anbima(indice)
+        if not s.empty:
+            return s
+    return fetch_ima_maisretorno(indice)
 
 
 def compute_sofr_returns(sofr_daily: pd.Series, ref_date: date) -> dict:
