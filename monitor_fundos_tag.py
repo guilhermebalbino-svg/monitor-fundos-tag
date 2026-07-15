@@ -850,15 +850,24 @@ def _fetch_maisretorno(slug: str) -> dict:
         )
         if not m:
             return {}
-        data = json.loads(m.group(1))
-        tf = data["props"]["pageProps"]["stats"]["stats"]["timeframe"]
+        data  = json.loads(m.group(1))
+        stats = data["props"]["pageProps"]["stats"]["stats"]
+        tf    = stats["timeframe"]
+        # last_quote_date em ms UTC → data local; ajusta para último dia útil
+        lqd_ms = stats.get("last_quote_date", 0)
+        if lqd_ms:
+            lqd = datetime.utcfromtimestamp(lqd_ms / 1000).date()
+            while lqd.weekday() >= 5:   # sáb=5, dom=6
+                lqd -= timedelta(days=1)
+        else:
+            lqd = np.nan
         return {
             "D":           np.nan,
             "M":           tf["mtd"]["profitability"],
             "ANO":         tf["ytd"]["profitability"],
             "1ANO":        tf["last_12_months"]["profitability"],
             "2ANOS":       tf["last_24_months"]["profitability"],
-            "ultima_cota": np.nan,
+            "ultima_cota": lqd,
         }
     except Exception:
         return {}
