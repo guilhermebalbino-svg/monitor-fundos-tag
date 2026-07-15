@@ -1,9 +1,9 @@
 {
   "2936": {
-    "m_ret": null,
-    "ano_ret": null,
-    "y1_ret": null,
-    "y2_ret": null,
-    "ref_date": "2026-07-15"
+    "m_ret": 0.0,
+    "ano_ret": 0.0,
+    "y1_ret": 0.0,
+    "y2_ret": 0.0,
+    "ref_date": "2026-07-10"
   }
 }
