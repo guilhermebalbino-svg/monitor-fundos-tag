@@ -1373,6 +1373,14 @@ def main():
                       border-left:3px solid #7B2D40;">
             📊 Fundos Condominiais
           </div>
+          <div style="font-size:13px; padding:7px 10px; margin-top:4px;
+                      background:#1a0c0c; border-radius:3px;
+                      border-left:3px solid #444;">
+            <a href="/Fundos_Exclusivos" target="_self"
+               style="color:#b09090; text-decoration:none;">
+              📈 Fundos Exclusivos
+            </a>
+          </div>
         </div>
         """, unsafe_allow_html=True)
 
