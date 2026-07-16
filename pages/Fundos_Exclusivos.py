@@ -22,43 +22,64 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── Fund config ───────────────────────────────────────────────────────────────
-EXCLUSIVOS_FUNDS = [
-    {"cnpj": "08621422000196", "name": "ALFER FIF MULTIMERCADO"},
-    {"cnpj": "18611538000106", "name": "ALRD FIF MULTIMERCADO"},
-    {"cnpj": "47512461000107", "name": "FUTURO II FIF CIC MULTIMERCADO"},
-    {"cnpj": "13591889000170", "name": "GENESIS PLUS RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO"},
-    {"cnpj": "17400234000129", "name": "GUVIDALA FIF MULTIMERCADO"},
-    {"cnpj": "17335641000108", "name": "HL TB FIF MULTIMERCADO (FIM 95)"},
-    {"cnpj": "63696630000162", "name": "JFT FIF MULTIMERCADO"},
-    {"cnpj": "64018596000130", "name": "JPA AGRO FIF"},
-    {"cnpj": "11409553000119", "name": "JUBA FIF MULTIMERCADO"},
-    {"cnpj": "65223808000183", "name": "JUBA III FIF MULTIMERCADO"},
-    {"cnpj": "37287572000103", "name": "LA PLATA FIF CIC MULTIMERCADO"},
-    {"cnpj": "57210425000142", "name": "LAGERTHA FIF CIC MULTIMERCADO"},
-    {"cnpj": "17413818000139", "name": "LAURUS FIF MULTIMERCADO"},
-    {"cnpj": "21015772000177", "name": "LUSS FIF MULTIMERCADO"},
-    {"cnpj": "17413812000161", "name": "MAGNÓLIAS FIF MULTIMERCADO (FIM 95)"},
-    {"cnpj": "17425221000104", "name": "MAHALÁKSHMI FI MULTIMERCADO"},
-    {"cnpj": "46420207000116", "name": "MARAU FI MULTIMERCADO"},
-    {"cnpj": "53100651000110", "name": "MARAU II FIF MULTIMERCADO"},
-    {"cnpj": "53026176000189", "name": "MARIA SILVIA FI FINANCEIRO INVEST NO EXTERIOR RESP LIMITADA MULTIMERCADO CRÉDITO PRIVADO"},
-    {"cnpj": "26342026000101", "name": "MEMÓRIAS FIF MULTIMERCADO"},
-    {"cnpj": "10841486000144", "name": "MYBS FIF CIC MULTIMERCADO"},
-    {"cnpj": "45560872000142", "name": "OCEANUS FIF MULTIMERCADO"},
-    {"cnpj": "66763983000126", "name": "PARANAÍBA RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO"},
-    {"cnpj": "54912091000160", "name": "POTENTIA I FI MULTIMERCADO"},
-    {"cnpj": "26768797000165", "name": "RAGNAR FIF MULTIMERCADO (FIM 95)"},
-    {"cnpj": "65919962000194", "name": "RANATORI II FI MULTIMERCADO"},
-    {"cnpj": "09009733000161", "name": "RANATORI RESP LIMITADA FI MULTIMERCADO CRÉDITO PRIVADO"},
-    {"cnpj": "08807608000134", "name": "RINTER FIF MULTIMERCADO (FIM 95)"},
-    {"cnpj": "53077066000146", "name": "RINTER II FI MULTIMERCADO"},
-    {"cnpj": "51389373000137", "name": "SB STONES FIF MULTIMERCADO"},
-    {"cnpj": "39432540000180", "name": "SCUBI RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO"},
-    {"cnpj": "11827429000173", "name": "SOLARIUM FIF MULTIMERCADO"},
+# ── Fund groups config ────────────────────────────────────────────────────────
+FUND_GROUPS_EXCL = [
+    {
+        "group": "MULTIMERCADO",
+        "benchmark_key": "cdi",
+        "benchmark_label": "CDI ACUMULADO",
+        "funds": [
+            {"cnpj": "08621422000196", "name": "ALFER FIF MULTIMERCADO"},
+            {"cnpj": "18611538000106", "name": "ALRD FIF MULTIMERCADO"},
+            {"cnpj": "47512461000107", "name": "FUTURO II FIF CIC MULTIMERCADO"},
+            {"cnpj": "13591889000170", "name": "GENESIS PLUS RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO"},
+            {"cnpj": "17400234000129", "name": "GUVIDALA FIF MULTIMERCADO"},
+            {"cnpj": "17335641000108", "name": "HL TB FIF MULTIMERCADO (FIM 95)"},
+            {"cnpj": "63696630000162", "name": "JFT FIF MULTIMERCADO"},
+            {"cnpj": "64018596000130", "name": "JPA AGRO FIF"},
+            {"cnpj": "11409553000119", "name": "JUBA FIF MULTIMERCADO"},
+            {"cnpj": "65223808000183", "name": "JUBA III FIF MULTIMERCADO"},
+            {"cnpj": "37287572000103", "name": "LA PLATA FIF CIC MULTIMERCADO"},
+            {"cnpj": "57210425000142", "name": "LAGERTHA FIF CIC MULTIMERCADO"},
+            {"cnpj": "17413818000139", "name": "LAURUS FIF MULTIMERCADO"},
+            {"cnpj": "21015772000177", "name": "LUSS FIF MULTIMERCADO"},
+            {"cnpj": "17413812000161", "name": "MAGNÓLIAS FIF MULTIMERCADO (FIM 95)"},
+            {"cnpj": "17425221000104", "name": "MAHALÁKSHMI FI MULTIMERCADO"},
+            {"cnpj": "46420207000116", "name": "MARAU FI MULTIMERCADO"},
+            {"cnpj": "53100651000110", "name": "MARAU II FIF MULTIMERCADO"},
+            {"cnpj": "53026176000189", "name": "MARIA SILVIA FI FINANCEIRO INVEST NO EXTERIOR RESP LIMITADA MULTIMERCADO CRÉDITO PRIVADO"},
+            {"cnpj": "26342026000101", "name": "MEMÓRIAS FIF MULTIMERCADO"},
+            {"cnpj": "10841486000144", "name": "MYBS FIF CIC MULTIMERCADO"},
+            {"cnpj": "45560872000142", "name": "OCEANUS FIF MULTIMERCADO"},
+            {"cnpj": "66763983000126", "name": "PARANAÍBA RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO"},
+            {"cnpj": "54912091000160", "name": "POTENTIA I FI MULTIMERCADO"},
+            {"cnpj": "26768797000165", "name": "RAGNAR FIF MULTIMERCADO (FIM 95)"},
+            {"cnpj": "65919962000194", "name": "RANATORI II FI MULTIMERCADO"},
+            {"cnpj": "09009733000161", "name": "RANATORI RESP LIMITADA FI MULTIMERCADO CRÉDITO PRIVADO"},
+            {"cnpj": "08807608000134", "name": "RINTER FIF MULTIMERCADO (FIM 95)"},
+            {"cnpj": "53077066000146", "name": "RINTER II FI MULTIMERCADO"},
+            {"cnpj": "51389373000137", "name": "SB STONES FIF MULTIMERCADO"},
+            {"cnpj": "39432540000180", "name": "SCUBI RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO"},
+            {"cnpj": "11827429000173", "name": "SOLARIUM FIF MULTIMERCADO"},
+        ],
+    },
+    {
+        "group": "AÇÕES",
+        "benchmark_key": "ibovespa",
+        "benchmark_label": "IBOVESPA",
+        "funds": [
+            {"cnpj": "18307768000178", "name": "DUNAJUKO FI AÇÕES"},
+            {"cnpj": "44230038000126", "name": "JUBA II FIF AÇÕES"},
+            {"cnpj": "19418925000185", "name": "MARIA SILVIA INVESTIMENTO NO EXTERIOR RESP LIMITADA FIF AÇÕES"},
+            {"cnpj": "35002734000194", "name": "PROFITABLE GROWTH FI AÇÕES"},
+            {"cnpj": "13549299000180", "name": "SOLIS FI AÇÕES"},
+        ],
+    },
 ]
 
-_CNPJS_EXCL = frozenset(f["cnpj"] for f in EXCLUSIVOS_FUNDS)
+_CNPJS_EXCL = frozenset(
+    f["cnpj"] for g in FUND_GROUPS_EXCL for f in g["funds"]
+)
 
 # ── Colors (idênticas ao monitor principal) ───────────────────────────────────
 COLOR_ORANGE    = "#E8801A"
@@ -121,12 +142,44 @@ def _fetch_bcb_excl(series_code: int, start: str, end: str) -> pd.Series:
         return pd.Series(dtype=float)
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def _fetch_yf_excl(symbol: str, start_ts: int, end_ts: int) -> pd.Series:
+    qs = f"?period1={start_ts}&period2={end_ts}&interval=1d"
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        )
+    }
+    for host in ("query1", "query2"):
+        url = f"https://{host}.finance.yahoo.com/v8/finance/chart/{symbol}{qs}"
+        try:
+            r = requests.get(url, headers=headers, timeout=30)
+            if r.status_code != 200:
+                continue
+            data   = r.json()
+            result = data["chart"]["result"][0]
+            ts     = result["timestamp"]
+            adj    = result["indicators"].get("adjclose")
+            closes = (
+                adj[0]["adjclose"]
+                if adj and adj[0].get("adjclose")
+                else result["indicators"]["quote"][0]["close"]
+            )
+            df = pd.DataFrame({"ts": ts, "close": closes})
+            df["date"] = pd.to_datetime(df["ts"], unit="s").dt.normalize()
+            return df.dropna(subset=["close"]).set_index("date")["close"].sort_index()
+        except Exception:
+            continue
+    return pd.Series(dtype=float)
+
+
 # ── Return calculation helpers ────────────────────────────────────────────────
 def _nearest_before(series: pd.Series, target_date) -> float:
     if series.empty:
         return np.nan
-    target = pd.Timestamp(target_date)
-    subset = series[series.index <= target]
+    subset = series[series.index <= pd.Timestamp(target_date)]
     return np.nan if subset.empty else subset.iloc[-1]
 
 
@@ -147,17 +200,10 @@ def compute_fund_returns(quota_series: pd.Series, today: date) -> dict:
     prev_obs = quota_series[quota_series.index < last_ts]
     d_ret = np.nan if prev_obs.empty else _pct_return(last_val, prev_obs.iloc[-1])
 
-    v_prev_month = _nearest_before(quota_series, last_ts.replace(day=1) - timedelta(days=1))
-    m_ret = _pct_return(last_val, v_prev_month)
-
-    v_prev_year = _nearest_before(quota_series, date(last_ts.year - 1, 12, 31))
-    ano_ret = _pct_return(last_val, v_prev_year)
-
-    v_1y = _nearest_before(quota_series, last_ts - pd.DateOffset(years=1))
-    y1_ret = _pct_return(last_val, v_1y)
-
-    v_2y = _nearest_before(quota_series, last_ts - pd.DateOffset(years=2))
-    y2_ret = _pct_return(last_val, v_2y)
+    m_ret   = _pct_return(last_val, _nearest_before(quota_series, last_ts.replace(day=1) - timedelta(days=1)))
+    ano_ret = _pct_return(last_val, _nearest_before(quota_series, date(last_ts.year - 1, 12, 31)))
+    y1_ret  = _pct_return(last_val, _nearest_before(quota_series, last_ts - pd.DateOffset(years=1)))
+    y2_ret  = _pct_return(last_val, _nearest_before(quota_series, last_ts - pd.DateOffset(years=2)))
 
     return {
         "D": d_ret, "M": m_ret, "ANO": ano_ret,
@@ -182,11 +228,37 @@ def compute_cdi_returns(cdi_daily: pd.Series, ref_date: date) -> dict:
         return np.nan if subset.empty else (np.prod(1 + subset.values / 100) - 1) * 100
 
     return {
-        "D":    float(s.iloc[-1]),
-        "M":    cum(last_ts.replace(day=1) - timedelta(days=1), last_ts),
-        "ANO":  cum(date(last_ts.year - 1, 12, 31), last_ts),
-        "1ANO": cum(last_ts - pd.DateOffset(years=1), last_ts),
+        "D":     float(s.iloc[-1]),
+        "M":     cum(last_ts.replace(day=1) - timedelta(days=1), last_ts),
+        "ANO":   cum(date(last_ts.year - 1, 12, 31), last_ts),
+        "1ANO":  cum(last_ts - pd.DateOffset(years=1), last_ts),
         "2ANOS": cum(last_ts - pd.DateOffset(years=2), last_ts),
+        "ultima_cota": last_ts.date(),
+    }
+
+
+def compute_price_returns(price_series: pd.Series, ref_date: date) -> dict:
+    nan_row = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
+    if price_series.empty:
+        return nan_row
+
+    s = price_series[price_series.index <= pd.Timestamp(ref_date)]
+    if s.empty:
+        return nan_row
+
+    last_ts  = s.index.max()
+    last_val = float(s.iloc[-1])
+
+    prev_obs = s[s.index < last_ts]
+    d_ret   = _pct_return(last_val, prev_obs.iloc[-1]) if not prev_obs.empty else np.nan
+    m_ret   = _pct_return(last_val, _nearest_before(s, last_ts.replace(day=1) - timedelta(days=1)))
+    ano_ret = _pct_return(last_val, _nearest_before(s, date(last_ts.year - 1, 12, 31)))
+    y1_ret  = _pct_return(last_val, _nearest_before(s, last_ts - pd.DateOffset(years=1)))
+    y2_ret  = _pct_return(last_val, _nearest_before(s, last_ts - pd.DateOffset(years=2)))
+
+    return {
+        "D": d_ret, "M": m_ret, "ANO": ano_ret,
+        "1ANO": y1_ret, "2ANOS": y2_ret,
         "ultima_cota": last_ts.date(),
     }
 
@@ -196,33 +268,22 @@ def compute_cdi_returns(cdi_daily: pd.Series, ref_date: date) -> dict:
 def load_exclusivos_data():
     today = date.today()
 
-    # Mesma estratégia do monitor principal: janela de 4 meses + ancoras de 1/2 anos ±1 mês
+    # Mesma estratégia do monitor principal: janela de 4 meses + âncoras de 1/2 anos ±1 mês
     months_to_fetch = set()
-    # 4 meses recentes (D, M, ANO parcial)
     for delta in range(4):
         y, m = today.year, today.month - delta
         while m < 1:
             m += 12; y -= 1
         months_to_fetch.add((y, m))
-    # ±1 mês em torno de 1 ano atrás (1ANO)
-    ref1y = (today - timedelta(days=365)).replace(day=1)
-    for delta in [-1, 0, 1]:
-        y, m = ref1y.year, ref1y.month + delta
-        while m < 1:
-            m += 12; y -= 1
-        while m > 12:
-            m -= 12; y += 1
-        months_to_fetch.add((y, m))
-    # ±1 mês em torno de 2 anos atrás (2ANOS)
-    ref2y = (today - timedelta(days=730)).replace(day=1)
-    for delta in [-1, 0, 1]:
-        y, m = ref2y.year, ref2y.month + delta
-        while m < 1:
-            m += 12; y -= 1
-        while m > 12:
-            m -= 12; y += 1
-        months_to_fetch.add((y, m))
-    # Dezembro dos últimos 2 anos (âncora ANO/YTD)
+    for ref_days, in [(365,), (730,)]:
+        ref = (today - timedelta(days=ref_days)).replace(day=1)
+        for delta in [-1, 0, 1]:
+            y, m = ref.year, ref.month + delta
+            while m < 1:
+                m += 12; y -= 1
+            while m > 12:
+                m -= 12; y += 1
+            months_to_fetch.add((y, m))
     months_to_fetch.add((today.year - 1, 12))
     months_to_fetch.add((today.year - 2, 12))
 
@@ -233,46 +294,56 @@ def load_exclusivos_data():
 
     start_str = f"01/01/{today.year - 2}"
     end_str   = today.strftime("%d/%m/%Y")
+    start_ts  = int(datetime(today.year - 2, 1, 1).timestamp())
+    end_ts    = int(datetime.now().timestamp())
 
-    with ThreadPoolExecutor(max_workers=4) as ex:
+    with ThreadPoolExecutor(max_workers=5) as ex:
         cvm_futs  = [ex.submit(_fetch_cvm_excl, yr, mo) for yr, mo in valid_months]
         cdi_fut   = ex.submit(_fetch_bcb_excl, 12, start_str, end_str)
+        ibov_fut  = ex.submit(_fetch_yf_excl, "%5EBVSP", start_ts, end_ts)
         cvm_dfs   = [f.result() for f in cvm_futs]
         cdi_daily = cdi_fut.result()
+        ibov_daily = ibov_fut.result()
 
     dfs = [d for d in cvm_dfs if not d.empty]
     quota_map = {}
     if dfs:
         combined = pd.concat(dfs, ignore_index=True)
+        combined = combined.sort_values(["CNPJ_norm", "DT_COMPTC"]).drop_duplicates()
         for cnpj, grp in combined.groupby("CNPJ_norm"):
-            quota_map[cnpj] = (
-                grp.set_index("DT_COMPTC")["VL_QUOTA"].sort_index()
-            )
+            quota_map[cnpj] = grp.set_index("DT_COMPTC")["VL_QUOTA"].sort_index()
 
-    # ref_date = última cota disponível
     all_last = [s.index.max() for s in quota_map.values() if not s.empty]
     ref_date = max(all_last).date() if all_last else today
 
-    fund_rows = []
-    for fund in EXCLUSIVOS_FUNDS:
-        cnpj = fund["cnpj"]
-        if cnpj in quota_map:
-            ret = compute_fund_returns(quota_map[cnpj], today)
-            uc = ret.get("ultima_cota")
-            if uc and (today - uc).days > 45:
-                ret = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
-        else:
-            ret = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
-        fund_rows.append({"name": fund["name"], "returns": ret})
-
-    cdi_ret = compute_cdi_returns(cdi_daily, ref_date)
-
-    return {
-        "fund_rows": fund_rows,
-        "cdi_ret":   cdi_ret,
-        "ref_date":  ref_date,
-        "today":     today,
+    # Benchmark returns por chave
+    bmark_returns = {
+        "cdi":      compute_cdi_returns(cdi_daily, ref_date),
+        "ibovespa": compute_price_returns(ibov_daily, ref_date),
     }
+
+    groups_data = []
+    for group in FUND_GROUPS_EXCL:
+        fund_rows = []
+        for fund in group["funds"]:
+            cnpj = fund["cnpj"]
+            if cnpj in quota_map:
+                ret = compute_fund_returns(quota_map[cnpj], today)
+                uc  = ret.get("ultima_cota")
+                if uc and (today - uc).days > 45:
+                    ret = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
+            else:
+                ret = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
+            fund_rows.append({"name": fund["name"], "returns": ret})
+
+        groups_data.append({
+            "name":        group["group"],
+            "fund_rows":   fund_rows,
+            "bmark_label": group["benchmark_label"],
+            "bmark_ret":   bmark_returns[group["benchmark_key"]],
+        })
+
+    return {"groups": groups_data, "ref_date": ref_date, "today": today}
 
 
 # ── Formatting / rendering ────────────────────────────────────────────────────
@@ -303,9 +374,6 @@ def _num_cell(v_str: str, raw) -> str:
 
 
 def build_html_table(data: dict) -> str:
-    fund_rows = data["fund_rows"]
-    cdi_ret   = data["cdi_ret"]
-
     TH = (
         f"background:{COLOR_BMARK_BG}; color:#c8b8a8; "
         "padding:7px 12px; text-align:center; font-size:11px; font-weight:600; "
@@ -325,6 +393,7 @@ def build_html_table(data: dict) -> str:
         ("LIQUIDEZ",  "min-width:72px;  text-align:center;", TH),
         ("PUB. ALVO", "min-width:90px;  text-align:center;", TH),
     ]
+    n_cols = len(cols)
 
     header_cells = "".join(
         f'<th style="{th_s} {col_s}">{label}</th>'
@@ -358,48 +427,46 @@ def build_html_table(data: dict) -> str:
     <tbody>
     """
 
-    # Seção MULTIMERCADO
-    n_cols = len(cols)
-    html += (
-        f'<tr class="sec"><td colspan="{n_cols}">'
-        f'MULTIMERCADO</td></tr>\n'
-    )
-
-    # Linhas dos fundos
-    for row in fund_rows:
-        ret = row["returns"]
-        uc  = ret.get("ultima_cota")
-        uc_s = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
+    for group in data["groups"]:
         html += (
-            f'<tr class="fund">'
-            f'<td class="name">{row["name"]}</td>'
-            f'{_num_cell(fmt_pct(ret.get("D")),     ret.get("D"))}'
-            f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
-            f'{_num_cell(fmt_pct(ret.get("ANO")),   ret.get("ANO"))}'
-            f'{_num_cell(fmt_pct(ret.get("1ANO")),  ret.get("1ANO"))}'
-            f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
-            f'<td class="date">{uc_s}</td>'
-            f'<td class="meta">N/A</td>'
-            f'<td class="meta">N/A</td>'
-            f'</tr>\n'
+            f'<tr class="sec"><td colspan="{n_cols}">'
+            f'{group["name"]}</td></tr>\n'
         )
 
-    # Benchmark CDI
-    uc_cdi = cdi_ret.get("ultima_cota")
-    uc_cdi_s = uc_cdi.strftime("%d/%m/%Y") if uc_cdi and not pd.isna(uc_cdi) else "-"
-    html += (
-        f'<tr class="bmark">'
-        f'<td class="bname">CDI ACUMULADO</td>'
-        f'{_num_cell(fmt_pct(cdi_ret.get("D")),     cdi_ret.get("D"))}'
-        f'{_num_cell(fmt_pct(cdi_ret.get("M")),     cdi_ret.get("M"))}'
-        f'{_num_cell(fmt_pct(cdi_ret.get("ANO")),   cdi_ret.get("ANO"))}'
-        f'{_num_cell(fmt_pct(cdi_ret.get("1ANO")),  cdi_ret.get("1ANO"))}'
-        f'{_num_cell(fmt_pct(cdi_ret.get("2ANOS")), cdi_ret.get("2ANOS"))}'
-        f'<td class="date">{uc_cdi_s}</td>'
-        f'<td class="meta">—</td>'
-        f'<td class="meta">—</td>'
-        f'</tr>\n'
-    )
+        for row in group["fund_rows"]:
+            ret  = row["returns"]
+            uc   = ret.get("ultima_cota")
+            uc_s = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
+            html += (
+                f'<tr class="fund">'
+                f'<td class="name">{row["name"]}</td>'
+                f'{_num_cell(fmt_pct(ret.get("D")),     ret.get("D"))}'
+                f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
+                f'{_num_cell(fmt_pct(ret.get("ANO")),   ret.get("ANO"))}'
+                f'{_num_cell(fmt_pct(ret.get("1ANO")),  ret.get("1ANO"))}'
+                f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
+                f'<td class="date">{uc_s}</td>'
+                f'<td class="meta">N/A</td>'
+                f'<td class="meta">N/A</td>'
+                f'</tr>\n'
+            )
+
+        bret = group["bmark_ret"]
+        uc_b = bret.get("ultima_cota")
+        uc_b_s = uc_b.strftime("%d/%m/%Y") if uc_b and not pd.isna(uc_b) else "-"
+        html += (
+            f'<tr class="bmark">'
+            f'<td class="bname">{group["bmark_label"]}</td>'
+            f'{_num_cell(fmt_pct(bret.get("D")),     bret.get("D"))}'
+            f'{_num_cell(fmt_pct(bret.get("M")),     bret.get("M"))}'
+            f'{_num_cell(fmt_pct(bret.get("ANO")),   bret.get("ANO"))}'
+            f'{_num_cell(fmt_pct(bret.get("1ANO")),  bret.get("1ANO"))}'
+            f'{_num_cell(fmt_pct(bret.get("2ANOS")), bret.get("2ANOS"))}'
+            f'<td class="date">{uc_b_s}</td>'
+            f'<td class="meta">—</td>'
+            f'<td class="meta">—</td>'
+            f'</tr>\n'
+        )
 
     html += "</tbody></table>"
     return html
@@ -458,7 +525,7 @@ def main():
     )
 
     # ── Carrega dados ─────────────────────────────────────────────────────────
-    with st.spinner("Carregando dados CVM e CDI..."):
+    with st.spinner("Carregando dados CVM, CDI e IBOVESPA..."):
         data = load_exclusivos_data()
 
     # ── Tabela ────────────────────────────────────────────────────────────────
@@ -476,7 +543,7 @@ def main():
 </body>
 </html>"""
 
-    components.html(full_html, height=1500, scrolling=True)
+    components.html(full_html, height=2000, scrolling=True)
 
 
 import traceback as _tb
