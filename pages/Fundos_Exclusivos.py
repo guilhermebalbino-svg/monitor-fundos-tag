@@ -64,6 +64,27 @@ FUND_GROUPS_EXCL = [
         ],
     },
     {
+        "group": "PREVIDÊNCIA",
+        "benchmark_key": "cdi",
+        "benchmark_label": "CDI ACUMULADO",
+        "funds": [
+            {"cnpj": "42682436000158", "name": "1358 PREVIDÊNCIA RESP LIMITADA FI MULTIMERCADO CRÉDITO PRIVADO"},
+            {"cnpj": "30520937000159", "name": "BELLA ICATU RESP LIMITADA FIF MULTIMERCADO PREVIDENCIÁRIO"},
+            {"cnpj": "44672883000151", "name": "VILA NOVA PREVIDÊNCIA FIF MULTIMERCADO"},
+        ],
+    },
+    {
+        "group": "RENDA FIXA",
+        "benchmark_key": "cdi",
+        "benchmark_label": "CDI ACUMULADO",
+        "funds": [
+            {"cnpj": "58891176000160", "name": "TAG PRAIA VERMELHA II RESP LIMITADA FIF FI INFRA RENDA FIXA"},
+            {"cnpj": "66175865000105", "name": "TREK 2 FIF FI INFRA RENDA FIXA"},
+            {"cnpj": "63730018000169", "name": "JFT STRATEGY FIF CIC FI INFRA RENDA FIXA"},
+            {"cnpj": "19941775000190", "name": "ALM RESP LIMITADA FIF RENDA FIXA"},
+        ],
+    },
+    {
         "group": "AÇÕES",
         "benchmark_key": "ibovespa",
         "benchmark_label": "IBOVESPA",
