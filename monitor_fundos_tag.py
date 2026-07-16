@@ -180,6 +180,13 @@ FUND_GROUPS = [
                 "liquidez": "Fechado",
                 "pub_alvo": "Profissional",
             },
+            {
+                "cnpj": "65084130000103",
+                "name": "VIT SPECIAL SITS II",
+                "tx_gestao": "N/A",
+                "liquidez": "Fechado",
+                "pub_alvo": "Profissional",
+            },
         ],
         "benchmarks": [
             {"name": "IPCA +6% - BENCHMARK", "key": "ipca6"},
