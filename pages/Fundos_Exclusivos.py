@@ -551,6 +551,24 @@ def build_html_table(data: dict) -> str:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
+    # ── CSS global ────────────────────────────────────────────────────────────
+    st.markdown("""
+    <style>
+      .stApp, [data-testid="stAppViewContainer"], .main { background-color:#0d0608 !important; }
+      [data-testid="stSidebar"] { background-color:#0a0406 !important;
+                                  border-right:1px solid #3a1515 !important; }
+      .main .block-container { background-color:#0d0608; padding-top:0.8rem; max-width:100%; }
+      #MainMenu { visibility:hidden; }
+      footer    { visibility:hidden; }
+      header[data-testid="stHeader"] { visibility:hidden; height:0; }
+      /* Oculta navegação nativa de páginas do Streamlit */
+      section[data-testid="stSidebar"] nav,
+      [data-testid="stSidebarNav"],
+      [data-testid="stSidebarNavItems"] { display:none !important; }
+      p, div, span, label { color:#e0d0d0; }
+    </style>
+    """, unsafe_allow_html=True)
+
     # ── Sidebar ───────────────────────────────────────────────────────────────
     try:
         with st.sidebar:
@@ -569,13 +587,13 @@ def main():
                           border-left:3px solid #444;">
                 <a href="/" target="_self"
                    style="color:#b09090; text-decoration:none;">
-                  📊 Fundos Condominiais
+                  Monitor - Fundos Condominiais
                 </a>
               </div>
               <div style="color:#e8d8d8; font-size:13px; padding:7px 10px; margin-top:4px;
                           background:#1a0c0c; border-radius:3px;
                           border-left:3px solid #7B2D40;">
-                📈 Fundos Exclusivos
+                Monitor - Fundos Exclusivos
               </div>
             </div>
             """, unsafe_allow_html=True)

@@ -1356,6 +1356,10 @@ def main():
       .stButton > button:hover { background-color: #3a1020 !important; }
       /* Textos gerais */
       p, div, span, label { color: #e0d0d0; }
+      /* Oculta navegação nativa de páginas do Streamlit */
+      section[data-testid="stSidebar"] nav,
+      [data-testid="stSidebarNav"],
+      [data-testid="stSidebarNavItems"] { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1371,14 +1375,14 @@ def main():
           <div style="color:#e8d8d8; font-size:13px; padding:7px 10px;
                       background:#1a0c0c; border-radius:3px;
                       border-left:3px solid #7B2D40;">
-            📊 Fundos Condominiais
+            Monitor - Fundos Condominiais
           </div>
           <div style="font-size:13px; padding:7px 10px; margin-top:4px;
                       background:#1a0c0c; border-radius:3px;
                       border-left:3px solid #444;">
             <a href="/Fundos_Exclusivos" target="_self"
                style="color:#b09090; text-decoration:none;">
-              📈 Fundos Exclusivos
+              Monitor - Fundos Exclusivos
             </a>
           </div>
         </div>
