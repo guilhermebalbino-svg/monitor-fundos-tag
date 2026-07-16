@@ -584,10 +584,12 @@ def compute_usdbrl_cdi_blend_returns(
     usd_r = compute_price_returns(usdbrl_prices, ref_date)
     cdi_r = compute_cdi_returns(cdi_daily, ref_date)
     result: dict = {"ultima_cota": usd_r.get("ultima_cota") or cdi_r.get("ultima_cota")}
-    for period in ["D", "M", "ANO", "1ANO", "2ANOS"]:
+    for period in ["D", "M", "ANO"]:
         u = usd_r.get(period, np.nan)
         c = cdi_r.get(period, np.nan)
         result[period] = np.nan if (pd.isna(u) or pd.isna(c)) else w_usd * u + w_cdi * c
+    result["1ANO"]  = np.nan
+    result["2ANOS"] = np.nan
     return result
 
 
