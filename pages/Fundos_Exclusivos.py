@@ -197,17 +197,46 @@ def compute_cdi_returns(cdi_daily: pd.Series, ref_date: date) -> dict:
 def load_exclusivos_data():
     today = date.today()
 
-    months = []
-    d = today.replace(day=1)
-    for _ in range(3):
-        months.append((d.year, d.month))
-        d = (d - timedelta(days=1)).replace(day=1)
+    # Mesma estratégia do monitor principal: janela de 4 meses + ancoras de 1/2 anos ±1 mês
+    months_to_fetch = set()
+    # 4 meses recentes (D, M, ANO parcial)
+    for delta in range(4):
+        y, m = today.year, today.month - delta
+        while m < 1:
+            m += 12; y -= 1
+        months_to_fetch.add((y, m))
+    # ±1 mês em torno de 1 ano atrás (1ANO)
+    ref1y = (today - timedelta(days=365)).replace(day=1)
+    for delta in [-1, 0, 1]:
+        y, m = ref1y.year, ref1y.month + delta
+        while m < 1:
+            m += 12; y -= 1
+        while m > 12:
+            m -= 12; y += 1
+        months_to_fetch.add((y, m))
+    # ±1 mês em torno de 2 anos atrás (2ANOS)
+    ref2y = (today - timedelta(days=730)).replace(day=1)
+    for delta in [-1, 0, 1]:
+        y, m = ref2y.year, ref2y.month + delta
+        while m < 1:
+            m += 12; y -= 1
+        while m > 12:
+            m -= 12; y += 1
+        months_to_fetch.add((y, m))
+    # Dezembro dos últimos 2 anos (âncora ANO/YTD)
+    months_to_fetch.add((today.year - 1, 12))
+    months_to_fetch.add((today.year - 2, 12))
+
+    valid_months = [
+        (yr, mo) for yr, mo in sorted(months_to_fetch)
+        if not (yr < 2020 or yr > today.year or (yr == today.year and mo > today.month))
+    ]
 
     start_str = f"01/01/{today.year - 2}"
     end_str   = today.strftime("%d/%m/%Y")
 
     with ThreadPoolExecutor(max_workers=4) as ex:
-        cvm_futs  = [ex.submit(_fetch_cvm_excl, y, m) for y, m in months]
+        cvm_futs  = [ex.submit(_fetch_cvm_excl, yr, mo) for yr, mo in valid_months]
         cdi_fut   = ex.submit(_fetch_bcb_excl, 12, start_str, end_str)
         cvm_dfs   = [f.result() for f in cvm_futs]
         cdi_daily = cdi_fut.result()
