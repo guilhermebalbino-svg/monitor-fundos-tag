@@ -1466,6 +1466,8 @@ def main():
     for group in FUND_GROUPS:
         table_rows.append({"type": "section", "name": group["group"]})
 
+        group_britech_dates = []
+
         for fund in group["funds"]:
             cnpj       = fund["cnpj"]
             max_stale  = fund.get("max_stale_days", 45)
@@ -1475,6 +1477,9 @@ def main():
                 returns = fetch_britech_fund_returns(
                     britech_id, fund["britech_start"], ref_date
                 )
+                uc = returns.get("ultima_cota")
+                if isinstance(uc, date):
+                    group_britech_dates.append(uc)
             elif cnpj in quota_map:
                 returns = compute_fund_returns(quota_map[cnpj], today)
                 uc = returns.get("ultima_cota")
@@ -1495,9 +1500,12 @@ def main():
                 "no_cota":  bool(britech_id),
             })
 
+        # Para grupos Britech, alinha o benchmark à última data disponível na API
+        bm_ref = max(group_britech_dates) if group_britech_dates else ref_date
+
         for bm in group["benchmarks"]:
             bm_returns = get_benchmark_returns(
-                bm["key"], ref_date,
+                bm["key"], bm_ref,
                 cdi_daily, imab_prices, imab5_prices, imab5plus_prices,
                 ipca_monthly, ibov_daily, usdbrl_prices, sofr_daily, ihfa_series,
             )
