@@ -186,6 +186,8 @@ FUND_GROUPS = [
                 "tx_gestao": "N/A",
                 "liquidez": "Fechado",
                 "pub_alvo": "Profissional",
+                "britech_id":    2778,
+                "britech_start": "2026-05-04",
             },
         ],
         "benchmarks": [
