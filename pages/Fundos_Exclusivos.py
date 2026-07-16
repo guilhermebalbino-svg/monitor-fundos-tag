@@ -382,13 +382,18 @@ def load_exclusivos_data():
     all_last = [s.index.max() for s in quota_map.values() if not s.empty]
     ref_date = max(all_last).date() if all_last else today
 
-    # Benchmark returns por chave
+    # Benchmark returns por chave — IMA-Bs com ultima_cota alinhada ao ref_date dos fundos
+    def _align(d: dict) -> dict:
+        r = dict(d)
+        r["ultima_cota"] = ref_date
+        return r
+
     bmark_returns = {
         "cdi":        compute_cdi_returns(cdi_daily, ref_date),
         "ibovespa":   compute_price_returns(ibov_daily, ref_date),
-        "ima_b":      imab_ret,
-        "ima_b5":     imab5_ret,
-        "ima_b5plus": imab5p_ret,
+        "ima_b":      _align(imab_ret)   if imab_ret   else {k: np.nan for k in ["D","M","ANO","1ANO","2ANOS","ultima_cota"]},
+        "ima_b5":     _align(imab5_ret)  if imab5_ret  else {k: np.nan for k in ["D","M","ANO","1ANO","2ANOS","ultima_cota"]},
+        "ima_b5plus": _align(imab5p_ret) if imab5p_ret else {k: np.nan for k in ["D","M","ANO","1ANO","2ANOS","ultima_cota"]},
     }
 
     groups_data = []

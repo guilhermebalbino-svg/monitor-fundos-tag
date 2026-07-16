@@ -1108,17 +1108,17 @@ def get_benchmark_returns(key: str, ref_date: date,
             return cdi_daily
         return compute_cdi_returns(cdi_daily, ref_date)
     elif key == "imab":
-        if isinstance(imab_prices, dict):
-            return imab_prices
-        return compute_price_returns(imab_prices, ref_date)
+        ret = dict(imab_prices) if isinstance(imab_prices, dict) else compute_price_returns(imab_prices, ref_date)
+        ret["ultima_cota"] = ref_date
+        return ret
     elif key == "imab5":
-        if isinstance(imab5_prices, dict):
-            return imab5_prices
-        return compute_price_returns(imab5_prices, ref_date)
+        ret = dict(imab5_prices) if isinstance(imab5_prices, dict) else compute_price_returns(imab5_prices, ref_date)
+        ret["ultima_cota"] = ref_date
+        return ret
     elif key == "imab5plus":
-        if isinstance(imab5plus_prices, dict):
-            return imab5plus_prices
-        return compute_price_returns(imab5plus_prices, ref_date)
+        ret = dict(imab5plus_prices) if isinstance(imab5plus_prices, dict) else compute_price_returns(imab5plus_prices, ref_date)
+        ret["ultima_cota"] = ref_date
+        return ret
     elif key == "ibovespa":
         return compute_price_returns(ibov_daily, ref_date)
     elif key == "usdbrl":
