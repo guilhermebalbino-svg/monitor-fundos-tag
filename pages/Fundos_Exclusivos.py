@@ -3,6 +3,8 @@ Fundos_Exclusivos.py — Monitor de Fundos Exclusivos TAG
 Página Streamlit independente (multi-page app).
 """
 import io
+import json
+import re
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
@@ -26,8 +28,7 @@ st.set_page_config(
 FUND_GROUPS_EXCL = [
     {
         "group": "MULTIMERCADO",
-        "benchmark_key": "cdi",
-        "benchmark_label": "CDI ACUMULADO",
+        "benchmarks": [{"key": "cdi", "label": "CDI ACUMULADO"}],
         "funds": [
             {"cnpj": "08621422000196", "name": "ALFER FIF MULTIMERCADO"},
             {"cnpj": "18611538000106", "name": "ALRD FIF MULTIMERCADO"},
@@ -65,8 +66,7 @@ FUND_GROUPS_EXCL = [
     },
     {
         "group": "PREVIDÊNCIA",
-        "benchmark_key": "cdi",
-        "benchmark_label": "CDI ACUMULADO",
+        "benchmarks": [{"key": "cdi", "label": "CDI ACUMULADO"}],
         "funds": [
             {"cnpj": "42682436000158", "name": "1358 PREVIDÊNCIA RESP LIMITADA FI MULTIMERCADO CRÉDITO PRIVADO"},
             {"cnpj": "30520937000159", "name": "BELLA ICATU RESP LIMITADA FIF MULTIMERCADO PREVIDENCIÁRIO"},
@@ -75,8 +75,12 @@ FUND_GROUPS_EXCL = [
     },
     {
         "group": "RENDA FIXA",
-        "benchmark_key": "cdi",
-        "benchmark_label": "CDI ACUMULADO",
+        "benchmarks": [
+            {"key": "cdi",        "label": "CDI ACUMULADO"},
+            {"key": "ima_b",      "label": "IMA-B"},
+            {"key": "ima_b5",     "label": "IMA-B 5"},
+            {"key": "ima_b5plus", "label": "IMA-B 5+"},
+        ],
         "funds": [
             {"cnpj": "58891176000160", "name": "TAG PRAIA VERMELHA II RESP LIMITADA FIF FI INFRA RENDA FIXA"},
             {"cnpj": "66175865000105", "name": "TREK 2 FIF FI INFRA RENDA FIXA"},
@@ -86,8 +90,7 @@ FUND_GROUPS_EXCL = [
     },
     {
         "group": "AÇÕES",
-        "benchmark_key": "ibovespa",
-        "benchmark_label": "IBOVESPA",
+        "benchmarks": [{"key": "ibovespa", "label": "IBOVESPA"}],
         "funds": [
             {"cnpj": "18307768000178", "name": "DUNAJUKO FI AÇÕES"},
             {"cnpj": "44230038000126", "name": "JUBA II FIF AÇÕES"},
@@ -194,6 +197,42 @@ def _fetch_yf_excl(symbol: str, start_ts: int, end_ts: int) -> pd.Series:
         except Exception:
             continue
     return pd.Series(dtype=float)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _fetch_maisretorno_excl(slug: str) -> dict:
+    try:
+        r = requests.get(
+            f"https://maisretorno.com/indice/{slug}",
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+            timeout=15,
+        )
+        m = re.search(
+            r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+            r.text, re.DOTALL,
+        )
+        if not m:
+            return {}
+        data   = json.loads(m.group(1))
+        stats  = data["props"]["pageProps"]["stats"]["stats"]
+        tf     = stats["timeframe"]
+        lqd_ms = stats.get("last_quote_date", 0)
+        if lqd_ms:
+            lqd = datetime.utcfromtimestamp(lqd_ms / 1000).date()
+            while lqd.weekday() >= 5:
+                lqd -= timedelta(days=1)
+        else:
+            lqd = np.nan
+        return {
+            "D":           np.nan,
+            "M":           tf["mtd"]["profitability"],
+            "ANO":         tf["ytd"]["profitability"],
+            "1ANO":        tf["last_12_months"]["profitability"],
+            "2ANOS":       tf["last_24_months"]["profitability"],
+            "ultima_cota": lqd,
+        }
+    except Exception:
+        return {}
 
 
 # ── Return calculation helpers ────────────────────────────────────────────────
@@ -318,13 +357,19 @@ def load_exclusivos_data():
     start_ts  = int(datetime(today.year - 2, 1, 1).timestamp())
     end_ts    = int(datetime.now().timestamp())
 
-    with ThreadPoolExecutor(max_workers=5) as ex:
-        cvm_futs  = [ex.submit(_fetch_cvm_excl, yr, mo) for yr, mo in valid_months]
-        cdi_fut   = ex.submit(_fetch_bcb_excl, 12, start_str, end_str)
-        ibov_fut  = ex.submit(_fetch_yf_excl, "%5EBVSP", start_ts, end_ts)
-        cvm_dfs   = [f.result() for f in cvm_futs]
-        cdi_daily = cdi_fut.result()
-        ibov_daily = ibov_fut.result()
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        cvm_futs    = [ex.submit(_fetch_cvm_excl, yr, mo) for yr, mo in valid_months]
+        cdi_fut     = ex.submit(_fetch_bcb_excl, 12, start_str, end_str)
+        ibov_fut    = ex.submit(_fetch_yf_excl, "%5EBVSP", start_ts, end_ts)
+        imab_fut    = ex.submit(_fetch_maisretorno_excl, "ima-b")
+        imab5_fut   = ex.submit(_fetch_maisretorno_excl, "ima-b-5")
+        imab5p_fut  = ex.submit(_fetch_maisretorno_excl, "ima-b-5-mais")
+        cvm_dfs     = [f.result() for f in cvm_futs]
+        cdi_daily   = cdi_fut.result()
+        ibov_daily  = ibov_fut.result()
+        imab_ret    = imab_fut.result()
+        imab5_ret   = imab5_fut.result()
+        imab5p_ret  = imab5p_fut.result()
 
     dfs = [d for d in cvm_dfs if not d.empty]
     quota_map = {}
@@ -339,8 +384,11 @@ def load_exclusivos_data():
 
     # Benchmark returns por chave
     bmark_returns = {
-        "cdi":      compute_cdi_returns(cdi_daily, ref_date),
-        "ibovespa": compute_price_returns(ibov_daily, ref_date),
+        "cdi":        compute_cdi_returns(cdi_daily, ref_date),
+        "ibovespa":   compute_price_returns(ibov_daily, ref_date),
+        "ima_b":      imab_ret,
+        "ima_b5":     imab5_ret,
+        "ima_b5plus": imab5p_ret,
     }
 
     groups_data = []
@@ -358,10 +406,12 @@ def load_exclusivos_data():
             fund_rows.append({"name": fund["name"], "returns": ret})
 
         groups_data.append({
-            "name":        group["group"],
-            "fund_rows":   fund_rows,
-            "bmark_label": group["benchmark_label"],
-            "bmark_ret":   bmark_returns[group["benchmark_key"]],
+            "name":       group["group"],
+            "fund_rows":  fund_rows,
+            "benchmarks": [
+                {"label": b["label"], "ret": bmark_returns.get(b["key"], {})}
+                for b in group["benchmarks"]
+            ],
         })
 
     return {"groups": groups_data, "ref_date": ref_date, "today": today}
@@ -472,22 +522,23 @@ def build_html_table(data: dict) -> str:
                 f'</tr>\n'
             )
 
-        bret = group["bmark_ret"]
-        uc_b = bret.get("ultima_cota")
-        uc_b_s = uc_b.strftime("%d/%m/%Y") if uc_b and not pd.isna(uc_b) else "-"
-        html += (
-            f'<tr class="bmark">'
-            f'<td class="bname">{group["bmark_label"]}</td>'
-            f'{_num_cell(fmt_pct(bret.get("D")),     bret.get("D"))}'
-            f'{_num_cell(fmt_pct(bret.get("M")),     bret.get("M"))}'
-            f'{_num_cell(fmt_pct(bret.get("ANO")),   bret.get("ANO"))}'
-            f'{_num_cell(fmt_pct(bret.get("1ANO")),  bret.get("1ANO"))}'
-            f'{_num_cell(fmt_pct(bret.get("2ANOS")), bret.get("2ANOS"))}'
-            f'<td class="date">{uc_b_s}</td>'
-            f'<td class="meta">—</td>'
-            f'<td class="meta">—</td>'
-            f'</tr>\n'
-        )
+        for bmark in group["benchmarks"]:
+            bret   = bmark["ret"]
+            uc_b   = bret.get("ultima_cota")
+            uc_b_s = uc_b.strftime("%d/%m/%Y") if uc_b and not pd.isna(uc_b) else "-"
+            html += (
+                f'<tr class="bmark">'
+                f'<td class="bname">{bmark["label"]}</td>'
+                f'{_num_cell(fmt_pct(bret.get("D")),     bret.get("D"))}'
+                f'{_num_cell(fmt_pct(bret.get("M")),     bret.get("M"))}'
+                f'{_num_cell(fmt_pct(bret.get("ANO")),   bret.get("ANO"))}'
+                f'{_num_cell(fmt_pct(bret.get("1ANO")),  bret.get("1ANO"))}'
+                f'{_num_cell(fmt_pct(bret.get("2ANOS")), bret.get("2ANOS"))}'
+                f'<td class="date">{uc_b_s}</td>'
+                f'<td class="meta">—</td>'
+                f'<td class="meta">—</td>'
+                f'</tr>\n'
+            )
 
     html += "</tbody></table>"
     return html
