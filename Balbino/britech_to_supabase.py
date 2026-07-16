@@ -94,6 +94,14 @@ def fetch_return(id_cliente: int, start: str, end: str) -> float | None:
     return float(row["RentabilidadeCotaBruta"])
 
 
+def prev_business_day(d: date) -> date:
+    """Retorna o dia útil anterior (sem considerar feriados)."""
+    prev = d - timedelta(days=1)
+    while prev.weekday() >= 5:
+        prev -= timedelta(days=1)
+    return prev
+
+
 def compute_returns(id_cliente: int, britech_start: str) -> dict:
     start_dt  = date.fromisoformat(britech_start)
     today     = date.today()
@@ -101,8 +109,8 @@ def compute_returns(id_cliente: int, britech_start: str) -> dict:
 
     if last_date is None:
         print("  Nenhuma cota encontrada.")
-        return {"m_ret": None, "ano_ret": None, "y1_ret": None,
-                "y2_ret": None, "ref_date": today.isoformat()}
+        return {"d_ret": None, "m_ret": None, "ano_ret": None,
+                "y1_ret": None, "y2_ret": None, "ref_date": today.isoformat()}
 
     ref_str = last_date.isoformat()
 
@@ -116,14 +124,16 @@ def compute_returns(id_cliente: int, britech_start: str) -> dict:
             return None
         return fetch_return(id_cliente, ini.isoformat(), ref_str)
 
+    d_ini   = prev_business_day(last_date)
     m_ini   = last_date.replace(day=1) - timedelta(days=1)
     ano_ini = date(last_date.year - 1, 12, 31)
     y1_ini  = date(last_date.year - 1, last_date.month, last_date.day)
     y2_ini  = date(last_date.year - 2, last_date.month, last_date.day)
 
     return {
+        "d_ret":    _get(d_ini,   allow_collapse=True),
         "m_ret":    _get(m_ini,   allow_collapse=True),
-        "ano_ret":  _get(ano_ini, allow_collapse=True),  # usa início do fundo no 1º ano
+        "ano_ret":  _get(ano_ini, allow_collapse=True),
         "y1_ret":   _get(y1_ini,  allow_collapse=False),
         "y2_ret":   _get(y2_ini,  allow_collapse=False),
         "ref_date": last_date.isoformat(),

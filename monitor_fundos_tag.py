@@ -950,7 +950,7 @@ def fetch_britech_fund_returns(id_cliente: int, britech_start: str,
     ref = date.fromisoformat(row["ref_date"]) if row.get("ref_date") else ref_date
 
     return {
-        "D":           np.nan,
+        "D":           _f(row.get("d_ret")),
         "M":           _f(row.get("m_ret")),
         "ANO":         _f(row.get("ano_ret")),
         "1ANO":        _f(row.get("y1_ret")),
