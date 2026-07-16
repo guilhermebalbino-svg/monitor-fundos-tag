@@ -1500,8 +1500,10 @@ def main():
                 "no_cota":  bool(britech_id),
             })
 
-        # Para grupos Britech, alinha o benchmark à última data disponível na API
-        bm_ref = max(group_britech_dates) if group_britech_dates else ref_date
+        # Só usa ref_date Britech se o grupo for 100% Britech (ex: FIP/TECH)
+        # Grupos mistos (ILÍQUIDOS) continuam com o ref_date global da CVM
+        all_britech = all(f.get("britech_id") for f in group["funds"])
+        bm_ref = max(group_britech_dates) if (group_britech_dates and all_britech) else ref_date
 
         for bm in group["benchmarks"]:
             bm_returns = get_benchmark_returns(
