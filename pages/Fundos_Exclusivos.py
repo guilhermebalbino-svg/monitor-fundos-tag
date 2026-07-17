@@ -136,8 +136,9 @@ def _fetch_cvm_excl(year: int, month: int) -> pd.DataFrame:
             z.open(z.namelist()[0]),
             sep=";",
             encoding="latin1",
-            usecols=["CNPJ_FUNDO_CLASSE", "DT_COMPTC", "VL_QUOTA"],
-            dtype={"CNPJ_FUNDO_CLASSE": str, "DT_COMPTC": str, "VL_QUOTA": float},
+            usecols=["CNPJ_FUNDO_CLASSE", "DT_COMPTC", "VL_QUOTA", "VL_PATRIM_LIQ"],
+            dtype={"CNPJ_FUNDO_CLASSE": str, "DT_COMPTC": str,
+                   "VL_QUOTA": float, "VL_PATRIM_LIQ": float},
         )
         z.close()
         df["CNPJ_norm"] = df["CNPJ_FUNDO_CLASSE"].str.replace(r"\D", "", regex=True)
@@ -373,11 +374,17 @@ def load_exclusivos_data():
 
     dfs = [d for d in cvm_dfs if not d.empty]
     quota_map = {}
+    pl_map    = {}
     if dfs:
         combined = pd.concat(dfs, ignore_index=True)
         combined = combined.sort_values(["CNPJ_norm", "DT_COMPTC"]).drop_duplicates()
         for cnpj, grp in combined.groupby("CNPJ_norm"):
-            quota_map[cnpj] = grp.set_index("DT_COMPTC")["VL_QUOTA"].sort_index()
+            grp_s = grp.set_index("DT_COMPTC").sort_index()
+            quota_map[cnpj] = grp_s["VL_QUOTA"]
+            if "VL_PATRIM_LIQ" in grp_s.columns:
+                pl_s = grp_s["VL_PATRIM_LIQ"].dropna()
+                if not pl_s.empty:
+                    pl_map[cnpj] = float(pl_s.iloc[-1])
 
     all_last = [s.index.max() for s in quota_map.values() if not s.empty]
     ref_date = max(all_last).date() if all_last else today
@@ -408,7 +415,8 @@ def load_exclusivos_data():
                     ret = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
             else:
                 ret = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
-            fund_rows.append({"name": fund["name"], "returns": ret})
+            pl = pl_map.get(cnpj, np.nan)
+            fund_rows.append({"name": fund["name"], "returns": ret, "pl": pl})
 
         groups_data.append({
             "name":       group["group"],
@@ -425,6 +433,14 @@ def load_exclusivos_data():
 # ── Formatting / rendering ────────────────────────────────────────────────────
 def fmt_pct(v, decimals=2) -> str:
     return "-" if pd.isna(v) else f"{v:.{decimals}f}%"
+
+
+def fmt_pl(v) -> str:
+    if pd.isna(v) or v <= 0:
+        return "-"
+    if v >= 1_000_000_000:
+        return f"R$ {v/1_000_000_000:.1f} Bi"
+    return f"R$ {v/1_000_000:.1f} M"
 
 
 def _num_cell(v_str: str, raw) -> str:
@@ -466,6 +482,7 @@ def build_html_table(data: dict) -> str:
         ("1 ANO",     "min-width:76px;  text-align:right;",  TH),
         ("2 ANOS",    "min-width:76px;  text-align:right;",  TH),
         ("ÚLT. COTA", "min-width:110px; text-align:center;", TH),
+        ("PL",        "min-width:100px; text-align:right;",  TH),
         ("LIQUIDEZ",  "min-width:72px;  text-align:center;", TH),
         ("PUB. ALVO", "min-width:90px;  text-align:center;", TH),
     ]
@@ -513,6 +530,7 @@ def build_html_table(data: dict) -> str:
             ret  = row["returns"]
             uc   = ret.get("ultima_cota")
             uc_s = uc.strftime("%d/%m/%Y") if uc and not pd.isna(uc) else "-"
+            pl_s = fmt_pl(row.get("pl", np.nan))
             html += (
                 f'<tr class="fund">'
                 f'<td class="name">{row["name"]}</td>'
@@ -522,6 +540,7 @@ def build_html_table(data: dict) -> str:
                 f'{_num_cell(fmt_pct(ret.get("1ANO")),  ret.get("1ANO"))}'
                 f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
                 f'<td class="date">{uc_s}</td>'
+                f'<td class="meta">{pl_s}</td>'
                 f'<td class="meta">N/A</td>'
                 f'<td class="meta">N/A</td>'
                 f'</tr>\n'
@@ -540,6 +559,7 @@ def build_html_table(data: dict) -> str:
                 f'{_num_cell(fmt_pct(bret.get("1ANO")),  bret.get("1ANO"))}'
                 f'{_num_cell(fmt_pct(bret.get("2ANOS")), bret.get("2ANOS"))}'
                 f'<td class="date">{uc_b_s}</td>'
+                f'<td class="meta">—</td>'
                 f'<td class="meta">—</td>'
                 f'<td class="meta">—</td>'
                 f'</tr>\n'

@@ -314,8 +314,9 @@ def fetch_cvm_monthly(year: int, month: int) -> pd.DataFrame:
             z.open(z.namelist()[0]),
             sep=";",
             encoding="latin1",
-            usecols=["CNPJ_FUNDO_CLASSE", "DT_COMPTC", "VL_QUOTA"],
-            dtype={"CNPJ_FUNDO_CLASSE": str, "DT_COMPTC": str, "VL_QUOTA": float},
+            usecols=["CNPJ_FUNDO_CLASSE", "DT_COMPTC", "VL_QUOTA", "VL_PATRIM_LIQ"],
+            dtype={"CNPJ_FUNDO_CLASSE": str, "DT_COMPTC": str,
+                   "VL_QUOTA": float, "VL_PATRIM_LIQ": float},
         )
         z.close()
         # Filtrar ANTES do to_datetime — descarta ~99% das linhas
@@ -1170,6 +1171,14 @@ def fmt_pct(v, decimals=2) -> str:
     return f"{v:.{decimals}f}%"
 
 
+def fmt_pl(v) -> str:
+    if pd.isna(v) or v <= 0:
+        return "-"
+    if v >= 1_000_000_000:
+        return f"R$ {v/1_000_000_000:.1f} Bi"
+    return f"R$ {v/1_000_000:.1f} M"
+
+
 def fmt_pct_zero(v, decimals=2) -> str:
     """Igual fmt_pct mas exibe 0.00% para NaN — usado em IMA-B onde D é sempre N/D por design."""
     if pd.isna(v):
@@ -1224,6 +1233,7 @@ def build_html_table(rows: list) -> str:
         ("1 ANO",            "min-width:76px;  text-align:right;",  TH),
         ("2 ANOS",           "min-width:76px;  text-align:right;",  TH),
         ("ÚLT. COTA",        "min-width:110px; text-align:center;", TH),
+        ("PL",               "min-width:100px; text-align:right;",  TH),
         ("LIQUIDEZ",         "min-width:72px;  text-align:center;", TH),
         ("PUB. ALVO",        "min-width:90px;  text-align:center;", TH),
     ]
@@ -1266,7 +1276,7 @@ def build_html_table(rows: list) -> str:
 
         if rtype == "section":
             html += (
-                f'<tr class="sec"><td colspan="10" style="padding:5px 12px;">'
+                f'<tr class="sec"><td colspan="11" style="padding:5px 12px;">'
                 f'{row["name"]}</td></tr>\n'
             )
 
@@ -1289,6 +1299,7 @@ def build_html_table(rows: list) -> str:
                 f'<td class="date">{uc_s}</td>'
                 f'<td class="meta">-</td>'
                 f'<td class="meta">-</td>'
+                f'<td class="meta">-</td>'
                 f'</tr>\n'
             )
 
@@ -1300,6 +1311,7 @@ def build_html_table(rows: list) -> str:
             tx       = row.get("tx_gestao", "-")
             liq      = row.get("liquidez",  "-")
             pub      = row.get("pub_alvo",  "-")
+            pl_s     = fmt_pl(row.get("pl", np.nan))
             # D sem cota diária → 0.00% muted; demais colunas → "-" quando NaN
             d_fp   = fmt_pct_zero if no_cota else fmt_pct
             d_na_c = COLOR_META_TEXT if no_cota else ""
@@ -1313,6 +1325,7 @@ def build_html_table(rows: list) -> str:
                 f'{_num_cell(fmt_pct(ret.get("1ANO")),  ret.get("1ANO"))}'
                 f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
                 f'<td class="date">{uc_s}</td>'
+                f'<td class="meta">{pl_s}</td>'
                 f'<td class="meta">{liq}</td>'
                 f'<td class="meta">{pub}</td>'
                 f'</tr>\n'
@@ -1440,12 +1453,17 @@ def main():
 
     today = date.today()
 
-    # Monta séries de cotas por CNPJ
+    # Monta séries de cotas e mapa de PL por CNPJ
     quota_map = {}  # cnpj → pd.Series de cotas
+    pl_map    = {}  # cnpj → último PL (float)
     if not cvm_df.empty:
         for cnpj, grp in cvm_df.groupby("CNPJ_norm"):
-            s = grp.set_index("DT_COMPTC")["VL_QUOTA"].sort_index()
-            quota_map[cnpj] = s
+            grp_s = grp.set_index("DT_COMPTC").sort_index()
+            quota_map[cnpj] = grp_s["VL_QUOTA"]
+            if "VL_PATRIM_LIQ" in grp_s.columns:
+                pl_s = grp_s["VL_PATRIM_LIQ"].dropna()
+                if not pl_s.empty:
+                    pl_map[cnpj] = float(pl_s.iloc[-1])
 
     # ref_date = moda da última data de cota entre os fundos ativos
     all_cnpjs = [f["cnpj"] for g in FUND_GROUPS for f in g["funds"]]
@@ -1490,14 +1508,16 @@ def main():
                 returns = {k: np.nan for k in
                            ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
 
+            pl = pl_map.get(cnpj, np.nan) if not britech_id else np.nan
             table_rows.append({
-                "type":     "fund",
-                "name":     fund["name"],
+                "type":      "fund",
+                "name":      fund["name"],
                 "tx_gestao": fund["tx_gestao"],
-                "liquidez": fund["liquidez"],
-                "pub_alvo": fund["pub_alvo"],
-                "returns":  returns,
-                "no_cota":  bool(britech_id),
+                "liquidez":  fund["liquidez"],
+                "pub_alvo":  fund["pub_alvo"],
+                "returns":   returns,
+                "no_cota":   bool(britech_id),
+                "pl":        pl,
             })
 
         # Só usa ref_date Britech se o grupo for 100% Britech (ex: FIP/TECH)
