@@ -512,6 +512,8 @@ def build_html_table(data: dict) -> str:
                 color:{COLOR_META_TEXT}; font-style:italic; }}
       .meta  {{ text-align:center; padding:5px 12px;
                 color:{COLOR_META_TEXT}; white-space:nowrap; }}
+      .pl    {{ text-align:right;  padding:5px 12px;
+                color:{COLOR_META_TEXT}; white-space:nowrap; }}
       .date  {{ text-align:center; padding:5px 12px;
                 color:{COLOR_DATE_TEXT}; white-space:nowrap; }}
     </style>
@@ -534,7 +536,7 @@ def build_html_table(data: dict) -> str:
             html += (
                 f'<tr class="fund">'
                 f'<td class="name">{row["name"]}</td>'
-                f'<td class="meta">{pl_s}</td>'
+                f'<td class="pl">{pl_s}</td>'
                 f'{_num_cell(fmt_pct(ret.get("D")),     ret.get("D"))}'
                 f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
                 f'{_num_cell(fmt_pct(ret.get("ANO")),   ret.get("ANO"))}'
@@ -553,7 +555,7 @@ def build_html_table(data: dict) -> str:
             html += (
                 f'<tr class="bmark">'
                 f'<td class="bname">{bmark["label"]}</td>'
-                f'<td class="meta">—</td>'
+                f'<td class="pl">—</td>'
                 f'{_num_cell(fmt_pct(bret.get("D")),     bret.get("D"))}'
                 f'{_num_cell(fmt_pct(bret.get("M")),     bret.get("M"))}'
                 f'{_num_cell(fmt_pct(bret.get("ANO")),   bret.get("ANO"))}'

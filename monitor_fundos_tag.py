@@ -1263,6 +1263,8 @@ def build_html_table(rows: list) -> str:
                 color:{COLOR_META_TEXT}; font-style:italic; }}
       .meta  {{ text-align:center; padding:5px 12px;
                 color:{COLOR_META_TEXT}; white-space:nowrap; }}
+      .pl    {{ text-align:right;  padding:5px 12px;
+                color:{COLOR_META_TEXT}; white-space:nowrap; }}
       .date  {{ text-align:center; padding:5px 12px;
                 color:{COLOR_DATE_TEXT}; white-space:nowrap; }}
     </style>
@@ -1290,7 +1292,7 @@ def build_html_table(rows: list) -> str:
             html += (
                 f'<tr class="bmark">'
                 f'<td class="bname">{row["name"]}</td>'
-                f'<td class="meta">-</td>'
+                f'<td class="pl">-</td>'
                 f'<td class="meta">-</td>'
                 f'{_num_cell(fp(ret.get("D")),     ret.get("D"),     na_color=na_c)}'
                 f'{_num_cell(fp(ret.get("M")),     ret.get("M"),     na_color=na_c)}'
@@ -1318,7 +1320,7 @@ def build_html_table(rows: list) -> str:
             html += (
                 f'<tr class="fund">'
                 f'<td class="name">{row["name"]}</td>'
-                f'<td class="meta">{pl_s}</td>'
+                f'<td class="pl">{pl_s}</td>'
                 f'<td class="meta">{tx}</td>'
                 f'{_num_cell(d_fp(ret.get("D")),        ret.get("D"),     na_color=d_na_c)}'
                 f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
