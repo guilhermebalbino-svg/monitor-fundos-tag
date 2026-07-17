@@ -21,7 +21,7 @@ st.set_page_config(
     page_title="Fundos Exclusivos — TAG",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ── Fund groups config ────────────────────────────────────────────────────────
