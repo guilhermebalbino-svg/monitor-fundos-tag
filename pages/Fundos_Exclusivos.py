@@ -475,14 +475,14 @@ def build_html_table(data: dict) -> str:
     TH_L = TH.replace("text-align:center", "text-align:left")
 
     cols = [
-        ("FUNDO",     "min-width:260px; text-align:left;",  TH_L),
+        ("FUNDO",     "min-width:220px; text-align:left;",  TH_L),
+        ("PL",        "min-width:100px; text-align:right;",  TH),
         ("D",         "min-width:72px;  text-align:right;",  TH),
         ("M",         "min-width:72px;  text-align:right;",  TH),
         ("ANO",       "min-width:72px;  text-align:right;",  TH),
         ("1 ANO",     "min-width:76px;  text-align:right;",  TH),
         ("2 ANOS",    "min-width:76px;  text-align:right;",  TH),
         ("ÚLT. COTA", "min-width:110px; text-align:center;", TH),
-        ("PL",        "min-width:100px; text-align:right;",  TH),
         ("LIQUIDEZ",  "min-width:72px;  text-align:center;", TH),
         ("PUB. ALVO", "min-width:90px;  text-align:center;", TH),
     ]
@@ -534,13 +534,13 @@ def build_html_table(data: dict) -> str:
             html += (
                 f'<tr class="fund">'
                 f'<td class="name">{row["name"]}</td>'
+                f'<td class="meta">{pl_s}</td>'
                 f'{_num_cell(fmt_pct(ret.get("D")),     ret.get("D"))}'
                 f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
                 f'{_num_cell(fmt_pct(ret.get("ANO")),   ret.get("ANO"))}'
                 f'{_num_cell(fmt_pct(ret.get("1ANO")),  ret.get("1ANO"))}'
                 f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
                 f'<td class="date">{uc_s}</td>'
-                f'<td class="meta">{pl_s}</td>'
                 f'<td class="meta">N/A</td>'
                 f'<td class="meta">N/A</td>'
                 f'</tr>\n'
@@ -553,13 +553,13 @@ def build_html_table(data: dict) -> str:
             html += (
                 f'<tr class="bmark">'
                 f'<td class="bname">{bmark["label"]}</td>'
+                f'<td class="meta">—</td>'
                 f'{_num_cell(fmt_pct(bret.get("D")),     bret.get("D"))}'
                 f'{_num_cell(fmt_pct(bret.get("M")),     bret.get("M"))}'
                 f'{_num_cell(fmt_pct(bret.get("ANO")),   bret.get("ANO"))}'
                 f'{_num_cell(fmt_pct(bret.get("1ANO")),  bret.get("1ANO"))}'
                 f'{_num_cell(fmt_pct(bret.get("2ANOS")), bret.get("2ANOS"))}'
                 f'<td class="date">{uc_b_s}</td>'
-                f'<td class="meta">—</td>'
                 f'<td class="meta">—</td>'
                 f'<td class="meta">—</td>'
                 f'</tr>\n'

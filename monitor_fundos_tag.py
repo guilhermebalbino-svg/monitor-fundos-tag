@@ -1225,7 +1225,8 @@ def build_html_table(rows: list) -> str:
 
     # Larguras fixas para alinhar colunas
     cols = [
-        ("FUNDO",            "min-width:250px; text-align:left;",  TH_L),
+        ("FUNDO",            "min-width:200px; text-align:left;",  TH_L),
+        ("PL",               "min-width:100px; text-align:right;",  TH),
         ("TX GESTÃO",        "min-width:80px;  text-align:center;", TH),
         ("D",                "min-width:72px;  text-align:right;",  TH),
         ("M",                "min-width:72px;  text-align:right;",  TH),
@@ -1233,7 +1234,6 @@ def build_html_table(rows: list) -> str:
         ("1 ANO",            "min-width:76px;  text-align:right;",  TH),
         ("2 ANOS",           "min-width:76px;  text-align:right;",  TH),
         ("ÚLT. COTA",        "min-width:110px; text-align:center;", TH),
-        ("PL",               "min-width:100px; text-align:right;",  TH),
         ("LIQUIDEZ",         "min-width:72px;  text-align:center;", TH),
         ("PUB. ALVO",        "min-width:90px;  text-align:center;", TH),
     ]
@@ -1291,13 +1291,13 @@ def build_html_table(rows: list) -> str:
                 f'<tr class="bmark">'
                 f'<td class="bname">{row["name"]}</td>'
                 f'<td class="meta">-</td>'
+                f'<td class="meta">-</td>'
                 f'{_num_cell(fp(ret.get("D")),     ret.get("D"),     na_color=na_c)}'
                 f'{_num_cell(fp(ret.get("M")),     ret.get("M"),     na_color=na_c)}'
                 f'{_num_cell(fp(ret.get("ANO")),   ret.get("ANO"),   na_color=na_c)}'
                 f'{_num_cell(fp(ret.get("1ANO")),  ret.get("1ANO"),  na_color=na_c)}'
                 f'{_num_cell(fp(ret.get("2ANOS")), ret.get("2ANOS"), na_color=na_c)}'
                 f'<td class="date">{uc_s}</td>'
-                f'<td class="meta">-</td>'
                 f'<td class="meta">-</td>'
                 f'<td class="meta">-</td>'
                 f'</tr>\n'
@@ -1318,6 +1318,7 @@ def build_html_table(rows: list) -> str:
             html += (
                 f'<tr class="fund">'
                 f'<td class="name">{row["name"]}</td>'
+                f'<td class="meta">{pl_s}</td>'
                 f'<td class="meta">{tx}</td>'
                 f'{_num_cell(d_fp(ret.get("D")),        ret.get("D"),     na_color=d_na_c)}'
                 f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
@@ -1325,7 +1326,6 @@ def build_html_table(rows: list) -> str:
                 f'{_num_cell(fmt_pct(ret.get("1ANO")),  ret.get("1ANO"))}'
                 f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
                 f'<td class="date">{uc_s}</td>'
-                f'<td class="meta">{pl_s}</td>'
                 f'<td class="meta">{liq}</td>'
                 f'<td class="meta">{pub}</td>'
                 f'</tr>\n'
