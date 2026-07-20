@@ -391,8 +391,16 @@ def load_exclusivos_data():
                 if not pl_s.empty:
                     pl_map[cnpj] = float(pl_s.iloc[-1])
 
-    all_last = [s.index.max() for s in quota_map.values() if not s.empty]
-    ref_date = max(all_last).date() if all_last else today
+    # ref_date = D-2 útil (garante dados publicados na CVM e BCB)
+    def _prev_biz(d: date, n: int = 2) -> date:
+        cur, count = d, 0
+        while count < n:
+            cur -= timedelta(days=1)
+            if cur.weekday() < 5:
+                count += 1
+        return cur
+
+    ref_date = _prev_biz(today)
 
     # Benchmark returns por chave — IMA-Bs com ultima_cota alinhada ao ref_date dos fundos
     def _align(d: dict) -> dict:
@@ -414,7 +422,9 @@ def load_exclusivos_data():
         for fund in group["funds"]:
             cnpj = fund["cnpj"]
             if cnpj in quota_map:
-                ret = compute_fund_returns(quota_map[cnpj], today)
+                q   = quota_map[cnpj]
+                q   = q[q.index <= pd.Timestamp(ref_date)]
+                ret = compute_fund_returns(q, today)
                 uc  = ret.get("ultima_cota")
                 if uc and (today - uc).days > 45:
                     ret = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}

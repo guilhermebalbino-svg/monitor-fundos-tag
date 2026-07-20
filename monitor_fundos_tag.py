@@ -1470,18 +1470,16 @@ def main():
                 if not pl_s.empty:
                     pl_map[cnpj] = float(pl_s.iloc[-1])
 
-    # ref_date = moda da última data de cota entre os fundos ativos
-    all_cnpjs = [f["cnpj"] for g in FUND_GROUPS for f in g["funds"]]
-    last_dates = []
-    for cnpj in all_cnpjs:
-        if cnpj in quota_map and not quota_map[cnpj].empty:
-            last_dates.append(quota_map[cnpj].index.max().date())
+    # ref_date = D-2 útil (garante dados publicados na CVM e BCB)
+    def _prev_biz(d: date, n: int = 2) -> date:
+        cur, count = d, 0
+        while count < n:
+            cur -= timedelta(days=1)
+            if cur.weekday() < 5:
+                count += 1
+        return cur
 
-    if last_dates:
-        from collections import Counter
-        ref_date: date = Counter(last_dates).most_common(1)[0][0]
-    else:
-        ref_date = today
+    ref_date: date = _prev_biz(today)
 
     # ── Monta linhas da tabela ────────────────────────────────────────────────
     table_rows = []
@@ -1505,7 +1503,9 @@ def main():
                 if isinstance(uc, date):
                     group_britech_dates.append(uc)
             elif cnpj in quota_map:
-                returns = compute_fund_returns(quota_map[cnpj], today)
+                q = quota_map[cnpj]
+                q = q[q.index <= pd.Timestamp(ref_date)]
+                returns = compute_fund_returns(q, today)
                 uc = returns.get("ultima_cota")
                 if uc and (today - uc).days > max_stale:
                     returns = {k: np.nan for k in
