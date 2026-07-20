@@ -588,7 +588,7 @@ def build_html_table(data: dict) -> str:
                 f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
                 f'<td class="date">{uc_s}</td>'
                 f'<td class="meta">{fmt_liquidez(row.get("liquidez"))}</td>'
-                f'<td class="meta">—</td>'
+                f'<td class="meta">Exclusivo</td>'
                 f'</tr>\n'
             )
 
