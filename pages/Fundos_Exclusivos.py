@@ -80,7 +80,7 @@ FUND_GROUPS_EXCL = [
         ],
     },
     {
-        "group": "RENDA FIXA",
+        "group": "INFRA",
         "benchmarks": [
             {"key": "cdi",        "label": "CDI ACUMULADO"},
             {"key": "ima_b",      "label": "IMA-B"},
@@ -91,7 +91,6 @@ FUND_GROUPS_EXCL = [
             {"cnpj": "58891176000160", "name": "TAG PRAIA VERMELHA II RESP LIMITADA FIF FI INFRA RENDA FIXA"},
             {"cnpj": "66175865000105", "name": "TREK 2 FIF FI INFRA RENDA FIXA"},
             {"cnpj": "63730018000169", "name": "JFT STRATEGY FIF CIC FI INFRA RENDA FIXA"},
-            {"cnpj": "19941775000190", "name": "ALM RESP LIMITADA FIF RENDA FIXA"},
         ],
     },
     {
