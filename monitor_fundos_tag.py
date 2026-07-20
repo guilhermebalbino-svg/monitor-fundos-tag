@@ -475,8 +475,10 @@ def compute_fund_returns(quota_series: pd.Series, today: date) -> dict:
     }
 
 
-def compute_cdi_returns(cdi_daily: pd.Series, ref_date: date) -> dict:
+def compute_cdi_returns(cdi_daily, ref_date: date) -> dict:
     """CDI acumulado até ref_date (alinhado com última cota dos fundos)."""
+    if isinstance(cdi_daily, dict):
+        return cdi_daily  # fallback maisretorno já pré-calculado
     if cdi_daily.empty:
         return {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
 
