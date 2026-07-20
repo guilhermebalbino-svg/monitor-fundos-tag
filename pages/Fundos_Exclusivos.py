@@ -30,53 +30,53 @@ FUND_GROUPS_EXCL = [
         "group": "MULTIMERCADO",
         "benchmarks": [{"key": "cdi", "label": "CDI ACUMULADO"}],
         "funds": [
-            {"cnpj": "08621422000196", "name": "ALFER FIF MULTIMERCADO",                                                                          "liquidez": 2,        "taxa_gestao": 0.0025},
-            {"cnpj": "18611538000106", "name": "ALRD FIF MULTIMERCADO",                                                                           "liquidez": "Término","taxa_gestao": 0.005},
-            {"cnpj": "47512461000107", "name": "FUTURO II FIF CIC MULTIMERCADO",                                                                   "liquidez": 1,        "taxa_gestao": None},
-            {"cnpj": "13591889000170", "name": "GENESIS PLUS RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO",                                      "liquidez": 127,      "taxa_gestao": 0.0042},
-            {"cnpj": "17400234000129", "name": "GUVIDALA FIF MULTIMERCADO",                                                                        "liquidez": "Término","taxa_gestao": 0.0035},
-            {"cnpj": "17335641000108", "name": "HL TB FIF MULTIMERCADO",                                                                           "liquidez": "Término","taxa_gestao": 0.0015},
-            {"cnpj": "63696630000162", "name": "JFT FIF MULTIMERCADO",                                                                             "liquidez": "Término","taxa_gestao": 0.0023},
-            {"cnpj": "11409553000119", "name": "JUBA FIF MULTIMERCADO",                                                                            "liquidez": "Término","taxa_gestao": 0.001},
-            {"cnpj": "37287572000103", "name": "LA PLATA FIF CIC MULTIMERCADO",                                                                    "liquidez": 1,        "taxa_gestao": 0.0045},
-            {"cnpj": "17413818000139", "name": "LAURUS FIF MULTIMERCADO",                                                                          "liquidez": "Término","taxa_gestao": 0.0035},
-            {"cnpj": "21015772000177", "name": "LUSS FIF MULTIMERCADO",                                                                            "liquidez": "Término","taxa_gestao": 0.0035},
-            {"cnpj": "17425221000104", "name": "MAHALÁKSHMI FI MULTIMERCADO",                                                                      "liquidez": "Término","taxa_gestao": 0.0055},
-            {"cnpj": "46420207000116", "name": "MARAU FI MULTIMERCADO",                                                                            "liquidez": "Término","taxa_gestao": None},
-            {"cnpj": "53026176000189", "name": "MARIA SILVIA FI FINANCEIRO INVEST NO EXTERIOR RESP LIMITADA MULTIMERCADO CRÉDITO PRIVADO",         "liquidez": "Término","taxa_gestao": None},
-            {"cnpj": "26342026000101", "name": "MEMÓRIAS FIF MULTIMERCADO",                                                                        "liquidez": 1,        "taxa_gestao": 0.0035},
-            {"cnpj": "10841486000144", "name": "MYBS FIF CIC MULTIMERCADO",                                                                        "liquidez": "Término","taxa_gestao": 0.002},
-            {"cnpj": "54912091000160", "name": "POTENTIA I FI MULTIMERCADO",                                                                       "liquidez": "Término","taxa_gestao": 0.0035},
-            {"cnpj": "09009733000161", "name": "RANATORI RESP LIMITADA FI MULTIMERCADO CRÉDITO PRIVADO",                                           "liquidez": "Término","taxa_gestao": 0.004},
-            {"cnpj": "08807608000134", "name": "RINTER FIF MULTIMERCADO",                                                                          "liquidez": "Término","taxa_gestao": 0.0021},
-            {"cnpj": "51389373000137", "name": "SB STONES FIF MULTIMERCADO",                                                                       "liquidez": "Término","taxa_gestao": 0.0045},
-            {"cnpj": "39432540000180", "name": "SCUBI RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO",                                             "liquidez": "Término","taxa_gestao": 0.004},
-            {"cnpj": "11827429000173", "name": "SOLARIUM FIF MULTIMERCADO",                                                                        "liquidez": 1,        "taxa_gestao": 0.0035},
+            {"cnpj": "08621422000196", "name": "ALFER FIF MULTIMERCADO",                                                                          "liquidez": 2,        "taxa_gestao": 0.0025, "perfil": "Moderado"},
+            {"cnpj": "18611538000106", "name": "ALRD FIF MULTIMERCADO",                                                                           "liquidez": "Término","taxa_gestao": 0.005,  "perfil": "Moderado"},
+            {"cnpj": "47512461000107", "name": "FUTURO II FIF CIC MULTIMERCADO",                                                                   "liquidez": 1,        "taxa_gestao": None,   "perfil": "Conservador"},
+            {"cnpj": "13591889000170", "name": "GENESIS PLUS RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO",                                      "liquidez": 127,      "taxa_gestao": 0.0042, "perfil": "Agressivo"},
+            {"cnpj": "17400234000129", "name": "GUVIDALA FIF MULTIMERCADO",                                                                        "liquidez": "Término","taxa_gestao": 0.0035, "perfil": "Moderado"},
+            {"cnpj": "17335641000108", "name": "HL TB FIF MULTIMERCADO",                                                                           "liquidez": "Término","taxa_gestao": 0.0015, "perfil": "—"},
+            {"cnpj": "63696630000162", "name": "JFT FIF MULTIMERCADO",                                                                             "liquidez": "Término","taxa_gestao": 0.0023, "perfil": "Renda Fixa"},
+            {"cnpj": "11409553000119", "name": "JUBA FIF MULTIMERCADO",                                                                            "liquidez": "Término","taxa_gestao": 0.001,  "perfil": "Agressivo"},
+            {"cnpj": "37287572000103", "name": "LA PLATA FIF CIC MULTIMERCADO",                                                                    "liquidez": 1,        "taxa_gestao": 0.0045, "perfil": "Renda Fixa"},
+            {"cnpj": "17413818000139", "name": "LAURUS FIF MULTIMERCADO",                                                                          "liquidez": "Término","taxa_gestao": 0.0035, "perfil": "Moderado"},
+            {"cnpj": "21015772000177", "name": "LUSS FIF MULTIMERCADO",                                                                            "liquidez": "Término","taxa_gestao": 0.0035, "perfil": "Moderado"},
+            {"cnpj": "17425221000104", "name": "MAHALÁKSHMI FI MULTIMERCADO",                                                                      "liquidez": "Término","taxa_gestao": 0.0055, "perfil": "Moderado"},
+            {"cnpj": "46420207000116", "name": "MARAU FI MULTIMERCADO",                                                                            "liquidez": "Término","taxa_gestao": None,   "perfil": "Agressivo"},
+            {"cnpj": "53026176000189", "name": "MARIA SILVIA FI FINANCEIRO INVEST NO EXTERIOR RESP LIMITADA MULTIMERCADO CRÉDITO PRIVADO",         "liquidez": "Término","taxa_gestao": None,   "perfil": "Conservador"},
+            {"cnpj": "26342026000101", "name": "MEMÓRIAS FIF MULTIMERCADO",                                                                        "liquidez": 1,        "taxa_gestao": 0.0035, "perfil": "Conservador"},
+            {"cnpj": "10841486000144", "name": "MYBS FIF CIC MULTIMERCADO",                                                                        "liquidez": "Término","taxa_gestao": 0.002,  "perfil": "Moderado"},
+            {"cnpj": "54912091000160", "name": "POTENTIA I FI MULTIMERCADO",                                                                       "liquidez": "Término","taxa_gestao": 0.0035, "perfil": "Moderado"},
+            {"cnpj": "09009733000161", "name": "RANATORI RESP LIMITADA FI MULTIMERCADO CRÉDITO PRIVADO",                                           "liquidez": "Término","taxa_gestao": 0.004,  "perfil": "Moderado"},
+            {"cnpj": "08807608000134", "name": "RINTER FIF MULTIMERCADO",                                                                          "liquidez": "Término","taxa_gestao": 0.0021, "perfil": "Agressivo"},
+            {"cnpj": "51389373000137", "name": "SB STONES FIF MULTIMERCADO",                                                                       "liquidez": "Término","taxa_gestao": 0.0045, "perfil": "Renda Fixa"},
+            {"cnpj": "39432540000180", "name": "SCUBI RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO",                                             "liquidez": "Término","taxa_gestao": 0.004,  "perfil": "Moderado"},
+            {"cnpj": "11827429000173", "name": "SOLARIUM FIF MULTIMERCADO",                                                                        "liquidez": 1,        "taxa_gestao": 0.0035, "perfil": "Conservador"},
         ],
     },
     {
         "group": "FIM 95",
         "benchmarks": [{"key": "cdi", "label": "CDI ACUMULADO"}],
         "funds": [
-            {"cnpj": "64018596000130", "name": "JPA AGRO FIF (FIM 95)",                                                                            "liquidez": None,     "taxa_gestao": None},
-            {"cnpj": "65223808000183", "name": "JUBA III FIF MULTIMERCADO (FIM 95)",                                                               "liquidez": None,     "taxa_gestao": 0.001},
-            {"cnpj": "57210425000142", "name": "LAGERTHA FIF CIC MULTIMERCADO (FIM 95)",                                                           "liquidez": "Término","taxa_gestao": 0.0039},
-            {"cnpj": "17413812000161", "name": "MAGNÓLIAS FIF MULTIMERCADO (FIM 95)",                                                              "liquidez": "Término","taxa_gestao": 0.0035},
-            {"cnpj": "53100651000110", "name": "MARAU II FIF MULTIMERCADO (FIM 95)",                                                               "liquidez": "Término","taxa_gestao": None},
-            {"cnpj": "45560872000142", "name": "OCEANUS FIF MULTIMERCADO (FIM 95)",                                                                "liquidez": "Término","taxa_gestao": 0.005},
-            {"cnpj": "66763983000126", "name": "PARANAÍBA RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO (FIM 95)",                                "liquidez": None,     "taxa_gestao": 0.004},
-            {"cnpj": "26768797000165", "name": "RAGNAR FIF MULTIMERCADO (FIM 95)",                                                                 "liquidez": "Término","taxa_gestao": 0.0034},
-            {"cnpj": "65919962000194", "name": "RANATORI II FI MULTIMERCADO (FIM 95)",                                                             "liquidez": None,     "taxa_gestao": 0.004},
-            {"cnpj": "53077066000146", "name": "RINTER II FI MULTIMERCADO (FIM 95)",                                                               "liquidez": "Término","taxa_gestao": 0.0021},
+            {"cnpj": "64018596000130", "name": "JPA AGRO FIF (FIM 95)",                                                                            "liquidez": None,     "taxa_gestao": None,   "perfil": "Agressivo"},
+            {"cnpj": "65223808000183", "name": "JUBA III FIF MULTIMERCADO (FIM 95)",                                                               "liquidez": None,     "taxa_gestao": 0.001,  "perfil": "Agressivo"},
+            {"cnpj": "57210425000142", "name": "LAGERTHA FIF CIC MULTIMERCADO (FIM 95)",                                                           "liquidez": "Término","taxa_gestao": 0.0039, "perfil": "Agressivo"},
+            {"cnpj": "17413812000161", "name": "MAGNÓLIAS FIF MULTIMERCADO (FIM 95)",                                                              "liquidez": "Término","taxa_gestao": 0.0035, "perfil": "Moderado"},
+            {"cnpj": "53100651000110", "name": "MARAU II FIF MULTIMERCADO (FIM 95)",                                                               "liquidez": "Término","taxa_gestao": None,   "perfil": "Agressivo"},
+            {"cnpj": "45560872000142", "name": "OCEANUS FIF MULTIMERCADO (FIM 95)",                                                                "liquidez": "Término","taxa_gestao": 0.005,  "perfil": "Renda Fixa"},
+            {"cnpj": "66763983000126", "name": "PARANAÍBA RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO (FIM 95)",                                "liquidez": None,     "taxa_gestao": 0.004,  "perfil": "FIM 95"},
+            {"cnpj": "26768797000165", "name": "RAGNAR FIF MULTIMERCADO (FIM 95)",                                                                 "liquidez": "Término","taxa_gestao": 0.0034, "perfil": "Agressivo"},
+            {"cnpj": "65919962000194", "name": "RANATORI II FI MULTIMERCADO (FIM 95)",                                                             "liquidez": None,     "taxa_gestao": 0.004,  "perfil": "FIM 95"},
+            {"cnpj": "53077066000146", "name": "RINTER II FI MULTIMERCADO (FIM 95)",                                                               "liquidez": "Término","taxa_gestao": 0.0021, "perfil": "Agressivo"},
         ],
     },
     {
         "group": "PREVIDÊNCIA",
         "benchmarks": [{"key": "cdi", "label": "CDI ACUMULADO"}],
         "funds": [
-            {"cnpj": "42682436000158", "name": "1358 PREVIDÊNCIA RESP LIMITADA FI MULTIMERCADO CRÉDITO PRIVADO", "liquidez": 8,  "taxa_gestao": 0.0025},
-            {"cnpj": "30520937000159", "name": "BELLA ICATU RESP LIMITADA FIF MULTIMERCADO PREVIDENCIÁRIO",       "liquidez": 7,  "taxa_gestao": 0.0003},
-            {"cnpj": "44672883000151", "name": "VILA NOVA PREVIDÊNCIA FIF MULTIMERCADO",                          "liquidez": 8,  "taxa_gestao": 0.0015},
+            {"cnpj": "42682436000158", "name": "1358 PREVIDÊNCIA RESP LIMITADA FI MULTIMERCADO CRÉDITO PRIVADO", "liquidez": 8,  "taxa_gestao": 0.0025, "perfil": "Moderado"},
+            {"cnpj": "30520937000159", "name": "BELLA ICATU RESP LIMITADA FIF MULTIMERCADO PREVIDENCIÁRIO",       "liquidez": 7,  "taxa_gestao": 0.0003, "perfil": "Moderado"},
+            {"cnpj": "44672883000151", "name": "VILA NOVA PREVIDÊNCIA FIF MULTIMERCADO",                          "liquidez": 8,  "taxa_gestao": 0.0015, "perfil": "Conservador"},
         ],
     },
     {
@@ -88,20 +88,20 @@ FUND_GROUPS_EXCL = [
             {"key": "ima_b5plus", "label": "IMA-B 5+"},
         ],
         "funds": [
-            {"cnpj": "58891176000160", "name": "TAG PRAIA VERMELHA II RESP LIMITADA FIF FI INFRA RENDA FIXA", "liquidez": 2,        "taxa_gestao": 0.005},
-            {"cnpj": "66175865000105", "name": "TREK 2 FIF FI INFRA RENDA FIXA",                              "liquidez": None,     "taxa_gestao": 0.004},
-            {"cnpj": "63730018000169", "name": "JFT STRATEGY FIF CIC FI INFRA RENDA FIXA",                    "liquidez": "Término","taxa_gestao": 0.0023},
+            {"cnpj": "58891176000160", "name": "TAG PRAIA VERMELHA II RESP LIMITADA FIF FI INFRA RENDA FIXA", "liquidez": 2,        "taxa_gestao": 0.005,  "perfil": "Deb Infra"},
+            {"cnpj": "66175865000105", "name": "TREK 2 FIF FI INFRA RENDA FIXA",                              "liquidez": None,     "taxa_gestao": 0.004,  "perfil": "—"},
+            {"cnpj": "63730018000169", "name": "JFT STRATEGY FIF CIC FI INFRA RENDA FIXA",                    "liquidez": "Término","taxa_gestao": 0.0023, "perfil": "Renda Fixa"},
         ],
     },
     {
         "group": "AÇÕES",
         "benchmarks": [{"key": "ibovespa", "label": "IBOVESPA"}],
         "funds": [
-            {"cnpj": "18307768000178", "name": "DUNAJUKO FI AÇÕES",                                                            "liquidez": 3,        "taxa_gestao": 0.0025},
-            {"cnpj": "44230038000126", "name": "JUBA II FIF AÇÕES",                                                            "liquidez": "Término","taxa_gestao": 0.001},
-            {"cnpj": "19418925000185", "name": "MARIA SILVIA INVESTIMENTO NO EXTERIOR RESP LIMITADA FIF AÇÕES",                "liquidez": "Término","taxa_gestao": None},
-            {"cnpj": "35002734000194", "name": "PROFITABLE GROWTH FI AÇÕES",                                                   "liquidez": 23,       "taxa_gestao": 0.0055},
-            {"cnpj": "13549299000180", "name": "SOLIS FI AÇÕES",                                                               "liquidez": 23,       "taxa_gestao": 0.0055},
+            {"cnpj": "18307768000178", "name": "DUNAJUKO FI AÇÕES",                                                            "liquidez": 3,        "taxa_gestao": 0.0025, "perfil": "Ações"},
+            {"cnpj": "44230038000126", "name": "JUBA II FIF AÇÕES",                                                            "liquidez": "Término","taxa_gestao": 0.001,  "perfil": "Ações"},
+            {"cnpj": "19418925000185", "name": "MARIA SILVIA INVESTIMENTO NO EXTERIOR RESP LIMITADA FIF AÇÕES",                "liquidez": "Término","taxa_gestao": None,   "perfil": "Ações"},
+            {"cnpj": "35002734000194", "name": "PROFITABLE GROWTH FI AÇÕES",                                                   "liquidez": 23,       "taxa_gestao": 0.0055, "perfil": "Ações"},
+            {"cnpj": "13549299000180", "name": "SOLIS FI AÇÕES",                                                               "liquidez": 23,       "taxa_gestao": 0.0055, "perfil": "Ações"},
         ],
     },
 ]
@@ -437,6 +437,7 @@ def load_exclusivos_data():
                 "pl":          pl,
                 "liquidez":    fund.get("liquidez"),
                 "taxa_gestao": fund.get("taxa_gestao"),
+                "perfil":      fund.get("perfil"),
             })
 
         fund_rows.sort(
@@ -527,7 +528,7 @@ def build_html_table(data: dict) -> str:
         ("2 ANOS",    "min-width:76px;  text-align:right;",  TH),
         ("ÚLT. COTA", "min-width:110px; text-align:center;", TH),
         ("LIQUIDEZ",  "min-width:72px;  text-align:center;", TH),
-        ("PUB. ALVO", "min-width:90px;  text-align:center;", TH),
+        ("PERFIL",    "min-width:90px;  text-align:center;", TH),
     ]
     n_cols = len(cols)
 
@@ -588,7 +589,7 @@ def build_html_table(data: dict) -> str:
                 f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
                 f'<td class="date">{uc_s}</td>'
                 f'<td class="meta">{fmt_liquidez(row.get("liquidez"))}</td>'
-                f'<td class="meta">Exclusivo</td>'
+                f'<td class="meta">{row.get("perfil", "—")}</td>'
                 f'</tr>\n'
             )
 
