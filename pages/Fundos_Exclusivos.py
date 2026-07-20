@@ -58,7 +58,7 @@ FUND_GROUPS_EXCL = [
             {"cnpj": "65919962000194", "name": "RANATORI II FI MULTIMERCADO (FIM 95)"},
             {"cnpj": "09009733000161", "name": "RANATORI RESP LIMITADA FI MULTIMERCADO CRÉDITO PRIVADO"},
             {"cnpj": "08807608000134", "name": "RINTER FIF MULTIMERCADO"},
-            {"cnpj": "53077066000146", "name": "RINTER II FI MULTIMERCADO"},
+            {"cnpj": "53077066000146", "name": "RINTER II FI MULTIMERCADO (FIM 95)"},
             {"cnpj": "51389373000137", "name": "SB STONES FIF MULTIMERCADO"},
             {"cnpj": "39432540000180", "name": "SCUBI RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO"},
             {"cnpj": "11827429000173", "name": "SOLARIUM FIF MULTIMERCADO"},
