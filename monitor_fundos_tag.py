@@ -957,6 +957,7 @@ def fetch_britech_fund_returns(id_cliente: int, britech_start: str,
         "1ANO":        _f(row.get("y1_ret")),
         "2ANOS":       _f(row.get("y2_ret")),
         "ultima_cota": ref,
+        "pl":          _f(row.get("pl")),
     }
 
 
@@ -1510,7 +1511,10 @@ def main():
                 returns = {k: np.nan for k in
                            ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
 
-            pl = pl_map.get(cnpj, np.nan) if not britech_id else np.nan
+            if britech_id:
+                pl = returns.get("pl", np.nan)
+            else:
+                pl = pl_map.get(cnpj, np.nan)
             table_rows.append({
                 "type":      "fund",
                 "name":      fund["name"],

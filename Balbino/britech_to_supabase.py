@@ -102,6 +102,32 @@ def prev_business_day(d: date) -> date:
     return prev
 
 
+def fetch_pl(id_cliente: int, last_date: date) -> float | None:
+    """Busca PLAbertura do último dia de cota via BuscaHistoricoCotaDia."""
+    end   = last_date.isoformat()
+    start = (last_date - timedelta(days=14)).isoformat()
+    url   = (
+        f"https://tag.britech.com.br/WS/api/Fundo/BuscaHistoricoCotaDia"
+        f"?idCarteira={id_cliente}&dataInicio={start}&dataFim={end}"
+    )
+    try:
+        r = requests.get(url, auth=(BRITECH_USER, BRITECH_PASS),
+                         headers={"Accept": "application/json"}, timeout=30)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        if not data:
+            return None
+        for row in reversed(data):
+            pl = float(row.get("PLAbertura") or 0)
+            if pl > 0:
+                return pl
+        return None
+    except Exception as e:
+        print(f"  Erro ao buscar PL: {e}")
+        return None
+
+
 def compute_returns(id_cliente: int, britech_start: str) -> dict:
     start_dt  = date.fromisoformat(britech_start)
     today     = date.today()
@@ -110,7 +136,8 @@ def compute_returns(id_cliente: int, britech_start: str) -> dict:
     if last_date is None:
         print("  Nenhuma cota encontrada.")
         return {"d_ret": None, "m_ret": None, "ano_ret": None,
-                "y1_ret": None, "y2_ret": None, "ref_date": today.isoformat()}
+                "y1_ret": None, "y2_ret": None, "ref_date": today.isoformat(),
+                "pl": None}
 
     ref_str = last_date.isoformat()
 
@@ -130,6 +157,9 @@ def compute_returns(id_cliente: int, britech_start: str) -> dict:
     y1_ini  = date(last_date.year - 1, last_date.month, last_date.day)
     y2_ini  = date(last_date.year - 2, last_date.month, last_date.day)
 
+    pl = fetch_pl(id_cliente, last_date)
+    print(f"  pl: {pl}")
+
     return {
         "d_ret":    _get(d_ini,   allow_collapse=True),
         "m_ret":    _get(m_ini,   allow_collapse=True),
@@ -137,6 +167,7 @@ def compute_returns(id_cliente: int, britech_start: str) -> dict:
         "y1_ret":   _get(y1_ini,  allow_collapse=False),
         "y2_ret":   _get(y2_ini,  allow_collapse=False),
         "ref_date": last_date.isoformat(),
+        "pl":       pl,
     }
 
 
