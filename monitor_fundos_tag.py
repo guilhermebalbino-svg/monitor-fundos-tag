@@ -1488,6 +1488,7 @@ def main():
         table_rows.append({"type": "section", "name": group["group"]})
 
         group_britech_dates = []
+        fund_rows_tmp = []
 
         for fund in group["funds"]:
             cnpj       = fund["cnpj"]
@@ -1515,7 +1516,7 @@ def main():
                 pl = returns.get("pl", np.nan)
             else:
                 pl = pl_map.get(cnpj, np.nan)
-            table_rows.append({
+            fund_rows_tmp.append({
                 "type":      "fund",
                 "name":      fund["name"],
                 "tx_gestao": fund["tx_gestao"],
@@ -1525,6 +1526,12 @@ def main():
                 "no_cota":   bool(britech_id),
                 "pl":        pl,
             })
+
+        fund_rows_tmp.sort(
+            key=lambda r: r["returns"].get("ANO") if not np.isnan(r["returns"].get("ANO", np.nan)) else float("-inf"),
+            reverse=True,
+        )
+        table_rows.extend(fund_rows_tmp)
 
         # Só usa ref_date Britech se o grupo for 100% Britech (ex: FIP/TECH)
         # Grupos mistos (ILÍQUIDOS) continuam com o ref_date global da CVM
