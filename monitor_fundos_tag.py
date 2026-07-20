@@ -1392,7 +1392,8 @@ def main():
       [data-testid="stSidebarCollapseButton"] { display: none !important; }
       section[data-testid="stSidebar"] {
         transform: none !important;
-        min-width: 14rem !important;
+        min-width: 18rem !important;
+        width: 18rem !important;
         display: flex !important;
       }
     </style>
@@ -1409,12 +1410,12 @@ def main():
           </div>
           <div style="color:#e8d8d8; font-size:13px; padding:7px 10px;
                       background:#1a0c0c; border-radius:3px;
-                      border-left:3px solid #7B2D40;">
+                      border-left:3px solid #7B2D40; white-space:nowrap;">
             Monitor - Fundos Condominiais
           </div>
           <div style="font-size:13px; padding:7px 10px; margin-top:4px;
                       background:#1a0c0c; border-radius:3px;
-                      border-left:3px solid #444;">
+                      border-left:3px solid #444; white-space:nowrap;">
             <a href="/Fundos_Exclusivos" target="_self"
                style="color:#b09090; text-decoration:none;">
               Monitor - Fundos Exclusivos
