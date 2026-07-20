@@ -423,6 +423,11 @@ def load_exclusivos_data():
             pl = pl_map.get(cnpj, np.nan)
             fund_rows.append({"name": fund["name"], "returns": ret, "pl": pl})
 
+        fund_rows.sort(
+            key=lambda r: r["returns"].get("ANO") if not pd.isna(r["returns"].get("ANO", np.nan)) else float("-inf"),
+            reverse=True,
+        )
+
         groups_data.append({
             "name":       group["group"],
             "fund_rows":  fund_rows,
