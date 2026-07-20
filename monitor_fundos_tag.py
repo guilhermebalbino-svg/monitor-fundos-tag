@@ -1387,6 +1387,9 @@ def main():
       section[data-testid="stSidebar"] nav,
       [data-testid="stSidebarNav"],
       [data-testid="stSidebarNavItems"] { display: none !important; }
+      /* Oculta botão de colapso do sidebar */
+      [data-testid="collapsedControl"],
+      [data-testid="stSidebarCollapseButton"] { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
