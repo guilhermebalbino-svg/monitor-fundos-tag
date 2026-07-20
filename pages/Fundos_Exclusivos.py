@@ -43,7 +43,7 @@ FUND_GROUPS_EXCL = [
             {"cnpj": "21015772000177", "name": "LUSS FIF MULTIMERCADO",                                                                            "liquidez": "Término","taxa_gestao": 0.0035, "perfil": "Moderado"},
             {"cnpj": "17425221000104", "name": "MAHALÁKSHMI FI MULTIMERCADO",                                                                      "liquidez": "Término","taxa_gestao": 0.0055, "perfil": "Moderado"},
             {"cnpj": "46420207000116", "name": "MARAU FI MULTIMERCADO",                                                                            "liquidez": "Término","taxa_gestao": None,   "perfil": "Agressivo"},
-            {"cnpj": "53026176000189", "name": "MARIA SILVIA FI FINANCEIRO INVEST NO EXTERIOR RESP LIMITADA MULTIMERCADO CRÉDITO PRIVADO",         "liquidez": "Término","taxa_gestao": None,   "perfil": "Conservador"},
+            {"cnpj": "53026176000189", "name": "MARIA SILVIA FI FINANCEIRO INVEST NO EXTERIOR RESP LIMITADA MULTIMERCADO CRÉDITO PRIVADO",         "liquidez": "Término","taxa_gestao": 0.0015, "perfil": "Conservador"},
             {"cnpj": "26342026000101", "name": "MEMÓRIAS FIF MULTIMERCADO",                                                                        "liquidez": 1,        "taxa_gestao": 0.0035, "perfil": "Conservador"},
             {"cnpj": "10841486000144", "name": "MYBS FIF CIC MULTIMERCADO",                                                                        "liquidez": "Término","taxa_gestao": 0.002,  "perfil": "Moderado"},
             {"cnpj": "54912091000160", "name": "POTENTIA I FI MULTIMERCADO",                                                                       "liquidez": "Término","taxa_gestao": 0.0035, "perfil": "Moderado"},
