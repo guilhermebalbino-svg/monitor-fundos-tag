@@ -607,9 +607,14 @@ def main():
       section[data-testid="stSidebar"] nav,
       [data-testid="stSidebarNav"],
       [data-testid="stSidebarNavItems"] { display:none !important; }
-      /* Oculta botão de colapso do sidebar */
+      /* Sidebar sempre visível, sem botão de colapso */
       [data-testid="collapsedControl"],
       [data-testid="stSidebarCollapseButton"] { display: none !important; }
+      section[data-testid="stSidebar"] {
+        transform: none !important;
+        min-width: 14rem !important;
+        display: flex !important;
+      }
       p, div, span, label { color:#e0d0d0; }
     </style>
     """, unsafe_allow_html=True)
