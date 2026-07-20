@@ -517,16 +517,17 @@ def build_html_table(data: dict) -> str:
     TH_L = TH.replace("text-align:center", "text-align:left")
 
     cols = [
-        ("FUNDO",     "min-width:220px; text-align:left;",  TH_L),
+        ("FUNDO",     "min-width:200px; text-align:left;",  TH_L),
         ("PL",        "min-width:100px; text-align:right;",  TH),
+        ("TX GESTÃO", "min-width:80px;  text-align:center;", TH),
         ("D",         "min-width:72px;  text-align:right;",  TH),
         ("M",         "min-width:72px;  text-align:right;",  TH),
         ("ANO",       "min-width:72px;  text-align:right;",  TH),
         ("1 ANO",     "min-width:76px;  text-align:right;",  TH),
         ("2 ANOS",    "min-width:76px;  text-align:right;",  TH),
         ("ÚLT. COTA", "min-width:110px; text-align:center;", TH),
-        ("LIQUIDEZ",    "min-width:80px;  text-align:center;", TH),
-        ("TAXA GESTÃO", "min-width:90px;  text-align:center;", TH),
+        ("LIQUIDEZ",  "min-width:72px;  text-align:center;", TH),
+        ("PUB. ALVO", "min-width:90px;  text-align:center;", TH),
     ]
     n_cols = len(cols)
 
@@ -579,6 +580,7 @@ def build_html_table(data: dict) -> str:
                 f'<tr class="fund">'
                 f'<td class="name">{row["name"]}</td>'
                 f'<td class="pl">{pl_s}</td>'
+                f'<td class="meta">{fmt_taxa_gestao(row.get("taxa_gestao"))}</td>'
                 f'{_num_cell(fmt_pct(ret.get("D")),     ret.get("D"))}'
                 f'{_num_cell(fmt_pct(ret.get("M")),     ret.get("M"))}'
                 f'{_num_cell(fmt_pct(ret.get("ANO")),   ret.get("ANO"))}'
@@ -586,7 +588,7 @@ def build_html_table(data: dict) -> str:
                 f'{_num_cell(fmt_pct(ret.get("2ANOS")), ret.get("2ANOS"))}'
                 f'<td class="date">{uc_s}</td>'
                 f'<td class="meta">{fmt_liquidez(row.get("liquidez"))}</td>'
-                f'<td class="meta">{fmt_taxa_gestao(row.get("taxa_gestao"))}</td>'
+                f'<td class="meta">—</td>'
                 f'</tr>\n'
             )
 
@@ -598,6 +600,7 @@ def build_html_table(data: dict) -> str:
                 f'<tr class="bmark">'
                 f'<td class="bname">{bmark["label"]}</td>'
                 f'<td class="pl">—</td>'
+                f'<td class="meta">—</td>'
                 f'{_num_cell(fmt_pct(bret.get("D")),     bret.get("D"))}'
                 f'{_num_cell(fmt_pct(bret.get("M")),     bret.get("M"))}'
                 f'{_num_cell(fmt_pct(bret.get("ANO")),   bret.get("ANO"))}'
