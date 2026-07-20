@@ -32,7 +32,7 @@ FUND_GROUPS_EXCL = [
         "funds": [
             {"cnpj": "08621422000196", "name": "ALFER FIF MULTIMERCADO",                                                                          "liquidez": 2,        "taxa_gestao": 0.0025, "perfil": "Moderado"},
             {"cnpj": "18611538000106", "name": "ALRD FIF MULTIMERCADO",                                                                           "liquidez": "Término","taxa_gestao": 0.005,  "perfil": "Moderado"},
-            {"cnpj": "47512461000107", "name": "FUTURO II FIF CIC MULTIMERCADO",                                                                   "liquidez": 1,        "taxa_gestao": None,   "perfil": "Conservador"},
+            {"cnpj": "47512461000107", "name": "FUTURO II FIF CIC MULTIMERCADO",                                                                   "liquidez": 1,        "taxa_gestao": 0.005,  "perfil": "Conservador"},
             {"cnpj": "13591889000170", "name": "GENESIS PLUS RESP LIMITADA FIF MULTIMERCADO CRÉDITO PRIVADO",                                      "liquidez": 127,      "taxa_gestao": 0.0042, "perfil": "Agressivo"},
             {"cnpj": "17400234000129", "name": "GUVIDALA FIF MULTIMERCADO",                                                                        "liquidez": "Término","taxa_gestao": 0.0035, "perfil": "Moderado"},
             {"cnpj": "17335641000108", "name": "HL TB FIF MULTIMERCADO",                                                                           "liquidez": "Término","taxa_gestao": 0.0015, "perfil": "—"},
@@ -58,7 +58,7 @@ FUND_GROUPS_EXCL = [
         "group": "FIM 95",
         "benchmarks": [{"key": "cdi", "label": "CDI ACUMULADO"}],
         "funds": [
-            {"cnpj": "64018596000130", "name": "JPA AGRO FIF (FIM 95)",                                                                            "liquidez": None,     "taxa_gestao": None,   "perfil": "Agressivo"},
+            {"cnpj": "64018596000130", "name": "JPA AGRO FIF (FIM 95)",                                                                            "liquidez": None,     "taxa_gestao": 0.005,  "perfil": "Agressivo"},
             {"cnpj": "65223808000183", "name": "JUBA III FIF MULTIMERCADO (FIM 95)",                                                               "liquidez": None,     "taxa_gestao": 0.001,  "perfil": "Agressivo"},
             {"cnpj": "57210425000142", "name": "LAGERTHA FIF CIC MULTIMERCADO (FIM 95)",                                                           "liquidez": "Término","taxa_gestao": 0.0039, "perfil": "Agressivo"},
             {"cnpj": "17413812000161", "name": "MAGNÓLIAS FIF MULTIMERCADO (FIM 95)",                                                              "liquidez": "Término","taxa_gestao": 0.0035, "perfil": "Moderado"},
