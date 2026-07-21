@@ -89,7 +89,7 @@ FUND_GROUPS_EXCL = [
         ],
         "funds": [
             {"cnpj": "58891176000160", "name": "TAG PRAIA VERMELHA II RESP LIMITADA FIF FI INFRA RENDA FIXA", "liquidez": 2,        "taxa_gestao": 0.005,  "perfil": "Deb Infra"},
-            {"cnpj": "66175865000105", "name": "TREK 2 FIF FI INFRA RENDA FIXA",                              "liquidez": None,     "taxa_gestao": 0.004,  "perfil": "—"},
+            {"cnpj": "66175865000105", "name": "TREK 2 FIF FI INFRA RENDA FIXA",                              "liquidez": None,     "taxa_gestao": 0.004,  "perfil": "Deb Infra"},
             {"cnpj": "63730018000169", "name": "JFT STRATEGY FIF CIC FI INFRA RENDA FIXA",                    "liquidez": "Término","taxa_gestao": 0.0023, "perfil": "Renda Fixa"},
         ],
     },
