@@ -1,20 +1,20 @@
 {
   "2936": {
-    "d_ret": 0.040560710599147676,
-    "m_ret": -1.3402475641133402,
-    "ano_ret": -2.59223276706,
+    "d_ret": null,
+    "m_ret": null,
+    "ano_ret": null,
     "y1_ret": null,
     "y2_ret": null,
-    "ref_date": "2026-07-15",
-    "pl": 5122337.72
+    "ref_date": "2026-07-22",
+    "pl": null
   },
   "2778": {
-    "d_ret": 0.05319160223900048,
-    "m_ret": 0.3998718336927629,
-    "ano_ret": -0.47127763518,
+    "d_ret": null,
+    "m_ret": null,
+    "ano_ret": null,
     "y1_ret": null,
     "y2_ret": null,
-    "ref_date": "2026-07-07",
-    "pl": 10407516.66
+    "ref_date": "2026-07-22",
+    "pl": null
   }
 }
