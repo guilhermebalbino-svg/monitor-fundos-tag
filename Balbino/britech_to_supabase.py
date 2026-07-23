@@ -43,8 +43,8 @@ BRITECH_FUNDS = [
 def _call_periodo(id_cliente: int, start: str, end: str) -> dict | None:
     """
     Chama BuscaRentabEstrategia_Periodo.
-    Retorna o primeiro elemento do JSON se ValorFinal > 0, senão None.
-    A API retorna zeros silenciosamente quando dataFim está além da última cota.
+    Retorna o row se tiver DataFim válido ou retorno não-zero; None se a API não tiver dados.
+    A API retorna zeros (sem DataFim) quando dataFim está além da última cota disponível.
     """
     url = (
         f"https://tag.britech.com.br/WS/api/Rentabilidade"
@@ -60,8 +60,13 @@ def _call_periodo(id_cliente: int, start: str, end: str) -> dict | None:
         if not data:
             return None
         row = data[0]
-        # A API retorna zeros silenciosamente quando dataFim está além da última cota
-        if row.get("RentabilidadeCotaBruta", 0) == 0 and row.get("RendimentoBruta", 0) == 0:
+        # Se a API retornou DataFim, há dados — aceita independente do retorno
+        if (row.get("DataFim") or "")[:10]:
+            return row
+        # Sem DataFim: API retorna zeros silenciosamente quando não tem dados
+        rent = row.get("RentabilidadeCotaBruta") or 0
+        rend = row.get("RendimentoBruta") or 0
+        if rent == 0 and rend == 0:
             return None
         return row
     except Exception as e:
@@ -70,19 +75,25 @@ def _call_periodo(id_cliente: int, start: str, end: str) -> dict | None:
 
 
 def find_last_cota_date(id_cliente: int, britech_start: str, from_date: date) -> date | None:
-    """Retrocede até 14 dias para encontrar o último dia com cota disponível."""
-    d = from_date
-    for _ in range(14):
+    """
+    Retrocede a partir de D-2 para encontrar o último dia com cota via BuscaRentabEstrategia_Periodo.
+    Usa DataFim da resposta: a API informa o último dia disponível mesmo quando pedimos data futura.
+    """
+    # Inicia de D-2 (cota confirmada, padrão do monitor)
+    d = from_date - timedelta(days=2)
+    while d.weekday() >= 5:
         d -= timedelta(days=1)
-        if d.weekday() >= 5:
-            continue
+
+    for _ in range(20):
+        while d.weekday() >= 5:
+            d -= timedelta(days=1)
         row = _call_periodo(id_cliente, britech_start, d.isoformat())
         if row is not None:
-            # DataFim real pode ser diferente do solicitado
-            data_fim_str = row.get("DataFim", "")[:10]
+            data_fim_str = (row.get("DataFim") or "")[:10]
             last = date.fromisoformat(data_fim_str) if data_fim_str else d
             print(f"  Ultima cota: {last}")
             return last
+        d -= timedelta(days=1)
     return None
 
 
@@ -103,7 +114,7 @@ def prev_business_day(d: date) -> date:
 
 
 def fetch_pl(id_cliente: int, last_date: date) -> float | None:
-    """Busca PLAbertura do último dia de cota via BuscaHistoricoCotaDia."""
+    """Busca PL do último dia de cota via BuscaHistoricoCotaDia."""
     end   = last_date.isoformat()
     start = (last_date - timedelta(days=14)).isoformat()
     url   = (
@@ -119,7 +130,7 @@ def fetch_pl(id_cliente: int, last_date: date) -> float | None:
         if not data:
             return None
         for row in reversed(data):
-            pl = float(row.get("PLAbertura") or 0)
+            pl = float(row.get("PLAbertura") or row.get("PLFechamento") or 0)
             if pl > 0:
                 return pl
         return None
@@ -177,6 +188,14 @@ def main():
     today = date.today()
     print(f"Atualizando retornos Britech — {today}\n")
 
+    # Carrega cache existente para comparar datas
+    existing = {}
+    if CACHE_FILE.exists():
+        try:
+            existing = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     cache = {}
     for fund in BRITECH_FUNDS:
         id_c  = fund["id_cliente"]
@@ -184,6 +203,19 @@ def main():
         print(f"ID {id_c} (inicio {start})")
 
         retornos = compute_returns(id_c, start)
+
+        # Proteção: não sobrescreve com data mais antiga que a já gravada
+        prev = existing.get(str(id_c), {})
+        prev_date_str = prev.get("ref_date", "")
+        new_date_str  = retornos.get("ref_date", "")
+        if (prev_date_str and new_date_str and new_date_str < prev_date_str
+                and retornos.get("d_ret") is None):
+            print(f"  [AVISO] Nova data {new_date_str} < cache {prev_date_str} com retornos nulos — mantendo cache anterior.")
+            retornos = prev
+        elif prev_date_str and new_date_str and new_date_str < prev_date_str:
+            print(f"  [AVISO] Britech retrocedeu: {prev_date_str} → {new_date_str}. Mantendo data anterior.")
+            retornos = prev
+
         for k, v in retornos.items():
             print(f"  {k}: {v if v is not None else 'N/D'}")
 
