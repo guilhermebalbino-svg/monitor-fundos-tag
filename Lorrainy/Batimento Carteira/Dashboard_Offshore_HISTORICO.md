@@ -68,3 +68,11 @@ Arquivo **novo e independente** (`Dashboard_Realocacao.html`), gerado a partir d
 **Números de referência (snapshot 30/06/2026):** 57 clientes, PL US$ 192,3M, realocação total a executar ~US$ 63,4M (33% do PL). Book super-alocado em **Credit EM (−32,1M)**, sub-alocado em **Alternatives (+24,8M)** e **G7 (+11,4M)**.
 
 **Ressalva de dados:** 3 clientes com classificação de ativos incompleta (cobertura ≠ 100%) — IMPERIUM (8,3%), MIDSOMMAR (95,2%), BOANNA (96,3%) — ficam sinalizados com badge "!" e aviso no plano; seus números são aproximados.
+
+## Dashboard_Realocacao_Offshore_FundoAFundo.html (adicionado em 31/07/2026)
+Terceiro dashboard, na mesma pasta. Layout **Atual → Delta → Alvo (fundo a fundo)** — os 3 painéis por fundo, por cliente, com seletor, barras atual vs. alvo e CSV/print.
+- **57 clientes offshore**, posição **30/06/2026**, mesma fonte do Dashboard Offshore.
+- **Fonte:** `Clientes Offshore - RESUMO CONTAS.xlsx` → aba "Addepar - Retorno aberto" (posição fundo a fundo; parse por outline level: cliente=nível 0, folha=tem Sub Asset Class e sem filhos) + aba "Classificação Modelo" (metas por fundo dos 5 modelos, junho). Validado contra DV_RAW (<2pp em 56/57).
+- **Delta por fundo = alvo%×PL − atual$.** Rótulos: casado / sair (fora do modelo) / incluir (novo do modelo) / caixa (consolidado).
+- **Ressalva importante:** posição e modelo não têm ISIN/Id em comum → casamento por nome (~37% do valor detido casa). Turnover por fundo é alto (bond-heavy vs fundos do modelo). **O Δ por CLASSE é o número confiável** (reconcilia com PL, bate com o Dashboard_Realocacao.html); o Δ por fundo é indicativo de execução.
+- Números: PL US$ 192,3M; realocação bruta ~US$ 110M.
