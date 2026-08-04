@@ -91,6 +91,15 @@ tr.ig-row .ig-val{color:var(--muted);text-decoration:line-through}
 .fname .ticker{color:var(--muted);font-size:11px}
 .buy-t{color:var(--buy)}.sell-t{color:var(--sell)}.mut{color:var(--muted)}.zero{color:#C0BCB0}
 .delta-cell{font-weight:700}
+input.dedit{width:88px;text-align:right;font:inherit;font-weight:700;font-variant-numeric:tabular-nums;color:inherit;background:transparent;border:1px solid transparent;border-radius:5px;padding:2px 5px;cursor:text}
+input.dedit:hover{border-color:var(--border);background:#FFFDF8}
+input.dedit:focus{outline:none;border-color:var(--accent);background:#FFF;box-shadow:0 0 0 2px rgba(99,13,36,.12)}
+input.dedit.edited{background:#FFF7E6;border-color:#E0B24A}
+input.dedit.edited:focus{background:#FFF}
+.reset-btn{font-size:11px;color:var(--accent);background:none;border:1px solid var(--border);border-radius:7px;padding:3px 9px;cursor:pointer;font-weight:600}
+.reset-btn:hover{background:#F3E9EB;border-color:var(--accent)}
+.reset-btn:disabled{opacity:.4;cursor:default;border-color:var(--border);background:none}
+tr.tot-row td .resid{display:block;font-size:10px;font-weight:600;color:var(--accent);text-transform:none;letter-spacing:0}
 .tag-s{font-size:9.5px;padding:1px 6px;border-radius:9px;font-weight:700;margin-left:6px;vertical-align:middle}
 .tag-both{background:rgba(47,122,78,.12);color:#2F7A4E}
 .tag-held{background:rgba(176,34,58,.12);color:#B0223A}
@@ -170,9 +179,15 @@ const pct=v=>(v*100).toFixed(1)+'%';
 
 DATA.forEach(c=>{
   let held=0,matched=0;
-  c.classes.forEach(cl=>{cl.d=cl.t-cl.a; cl.funds.forEach(f=>{ if(f.s!=='model')held+=f.a; if(f.s==='both')matched+=f.a; });});
+  c.classes.forEach((cl,ci)=>{cl.d=cl.t-cl.a; cl.funds.forEach((f,fi)=>{ f.id=ci+'_'+fi; f.d0=f.d; f.t0=f.t; f.manual=false; if(f.s!=='model')held+=f.a; if(f.s==='both')matched+=f.a; });});
   c.turnover=c.buy; c.matchPct=held>0?matched/held:0; c.heldTot=held;
 });
+// Recalcula subtotais de classe e resíduo a partir dos deltas (que podem ter sido editados à mão)
+function recalcClient(c){
+  c.classes.forEach(cl=>{ cl.t=cl.funds.reduce((s,f)=>s+f.t,0); cl.d=cl.t-cl.a; });
+  c.residual = c.pl - c.classes.reduce((s,cl)=>s+cl.t,0); // sobra não alocada (Alvo < PL) ⇒ vira caixa
+  c.edited = c.classes.some(cl=>cl.funds.some(f=>f.manual));
+}
 // Regra do mínimo de $2k por ordem:
 //  - "model" (ativo novo / incluir): compra SEMPRE (sem mínimo).
 //  - "held" (zerar a posição / sair): executa SEMPRE (não deixa resíduo).
@@ -182,7 +197,7 @@ function recomputeOrders(){
   DATA.forEach(c=>{
     let buy=0,sell=0;
     c.classes.forEach(cl=>cl.funds.forEach(f=>{
-      f.ig = (f.s==='both' || f.s==='cash') && Math.abs(f.d) < MINORDER;
+      f.ig = !f.manual && (f.s==='both' || f.s==='cash') && Math.abs(f.d) < MINORDER;
       if(!f.ig){ if(f.d>0) buy+=f.d; else if(f.d<0) sell+=f.d; }
     }));
     c.buyN=buy; c.sellN=sell;
@@ -256,7 +271,7 @@ function baBar(cli,useFinal){
     return `<div class="ba-seg" style="width:${w}%;background:${col}" title="${s.cls}: ${pct(s.val/cli.pl)}"><span>${w>7?pct(s.val/cli.pl):''}</span></div>`;}).join('')+`</div>`;
 }
 function render(){
-  const c=DATA[cur]; sel.value=cur;
+  const c=DATA[cur]; sel.value=cur; recalcClient(c);
   const o=c.off||{};
   const off=o.officer?`<span class="badge b-off">${o.officer}</span> <span class="badge ${o.dnd==='D'?'b-d':'b-nd'}">${o.dnd||'—'}</span>${o.seg?` <span class="mut">${o.seg}</span>`:''}${o.grupo&&o.grupo!=='SEM GRUPO'?` <span class="mut">· ${o.grupo}</span>`:''}`:'';
   let rows='';
@@ -274,12 +289,11 @@ function render(){
       const nm=f.n.replace(/\s*\(([^)]+)\)\s*$/,''); const tk=/\(([^)]+)\)\s*$/.exec(f.n);
       const tag={both:'tag-both',held:'tag-held',model:'tag-model',cash:'tag-cash'}[f.s];
       const tlab={both:'casado',held:'sair',model:'incluir',cash:'caixa'}[f.s];
-      const dcell = Math.abs(d)<1?'—':(ig?`<span class="ig-val">${sgnM(d)}</span> <span class="ig-lbl">&lt;$2k</span>`:sgnM(d));
       rows+=`<tr class="fund-row${ig?' ig-row':''}">
         <td class="fname">${nm}${tk?` <span class="ticker">${tk[1]}</span>`:''}<span class="tag-s ${tag}">${tlab}</span></td>
         <td class="num">${f.a>0.5?fmtUSD(f.a):'<span class=zero>—</span>'}</td>
         <td class="num mut">${f.a>0.5?pct(f.a/c.pl):''}</td>
-        <td class="num delta-cell ${ig?'zero':(dc?dc+'-t':'zero')}">${dcell}</td>
+        <td class="num delta-cell ${ig?'zero':(dc?dc+'-t':'zero')}"><input class="dedit${f.manual?' edited':''}" data-id="${f.id}" value="${Math.round(d)}" title="Δ editável — Enter/sair para aplicar. Ex.: alt indisponível → 0">${ig?' <span class="ig-lbl">&lt;$2k</span>':''}</td>
         <td class="num">${f.t>0.5?fmtUSD(f.t):'<span class=zero>—</span>'}</td>
         <td class="num mut">${f.t>0.5?pct(f.t/c.pl):''}</td>
       </tr>`;
@@ -291,6 +305,7 @@ function render(){
       <span class="cn">${c.nome}</span>
       <span class="badge b-perf">${c.perfil}</span>${o.custodia?` <span class="badge b-cust">&#127974; ${o.custodia}</span>`:''}${off}
       <span style="flex:1"></span>
+      <button class="reset-btn" id="reset-deltas" ${c.edited?'':'disabled'} title="Restaura os deltas do modelo neste cliente">&#8635; Reset deltas</button>
       <span class="meta">Modelo: <b style="color:var(--txt)">${c.model}</b> · PL <b style="color:var(--txt)">${fmtUSD(c.pl)}</b></span>
     </div>
     <div style="display:flex;gap:26px;flex-wrap:wrap;margin:12px 0 14px">
@@ -313,7 +328,7 @@ function render(){
       </thead>
       <tbody>${rows}</tbody>
       <tfoot><tr class="tot-row">
-        <td>TOTAL &mdash; PL da carteira</td>
+        <td>TOTAL &mdash; PL da carteira${Math.abs(c.residual)>1?`<span class="resid">resíduo não alocado (→ caixa): <b>${sgnM(c.residual)}</b></span>`:''}</td>
         <td class="num">${fmtUSD(totA)}</td><td class="num">${pct(totA/c.pl)}</td>
         <td class="num ${totD>1?'buy-t':totD<-1?'sell-t':'mut'}">${Math.abs(totD)<1?'$0':sgnM(totD)}</td>
         <td class="num">${fmtUSD(totT)}</td><td class="num">${pct(totT/c.pl)}</td>
@@ -329,6 +344,25 @@ document.getElementById('btn-csv').onclick=()=>{
   const b=new Blob(['﻿'+L.join('\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');
   a.href=URL.createObjectURL(b);a.download='realoc_offshore_'+c.nome.replace(/[^A-Za-z0-9]/g,'_')+'.csv';a.click();
 };
+// --- Delta editável: aplica no blur/Enter, recalcula fundo→classe→total→KPIs ---
+const cliCard=document.getElementById('cli-card');
+cliCard.addEventListener('change', e=>{
+  const t=e.target; if(!t.classList||!t.classList.contains('dedit')) return;
+  const c=DATA[cur]; const [ci,fi]=t.dataset.id.split('_').map(Number);
+  const f=c.classes[ci].funds[fi];
+  let v=parseFloat(String(t.value).replace(/[^0-9.\-]/g,''));
+  if(isNaN(v)) v=f.d;
+  f.d=v; f.t=f.a+v; f.manual=(Math.round(v)!==Math.round(f.d0));
+  recomputeOrders(); renderKPIs(filtOrder().map(i=>DATA[i])); render();
+});
+cliCard.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.classList && e.target.classList.contains('dedit')){e.preventDefault(); e.target.blur();}
+});
+cliCard.addEventListener('click', e=>{
+  if(e.target.id!=='reset-deltas') return;
+  const c=DATA[cur]; c.classes.forEach(cl=>cl.funds.forEach(f=>{f.d=f.d0;f.t=f.t0;f.manual=false;}));
+  recomputeOrders(); renderKPIs(filtOrder().map(i=>DATA[i])); render();
+});
 render();
 </script>
 </body>
