@@ -1248,13 +1248,13 @@ def build_html_table(rows: list) -> str:
 
     html = f"""
     <style>
-      body  {{ background:#F7F5EE; margin:0; padding:4px 0;
-               font-family:'Aalto Sans','Segoe UI',Tahoma,system-ui,sans-serif; }}
+      body  {{ background:#F5F3EE; margin:0; padding:4px 0;
+               font-family:'Inter','Segoe UI',Tahoma,system-ui,sans-serif; }}
       table {{ border-collapse:collapse; width:100%; font-size:12px; }}
       td    {{ border-bottom:1px solid #E2DDD0; white-space:nowrap; }}
       tr:hover td {{ background:#F6F3EC !important; }}
       .sec td {{
-        background:#F7F5EE; color:{COLOR_ORANGE}; font-weight:700;
+        background:#F5F3EE; color:{COLOR_ORANGE}; font-weight:700;
         font-size:11px; text-transform:uppercase; letter-spacing:2px;
         padding:10px 12px 4px 12px; border-bottom:none; border-top:1px solid #E2DDD0;
       }}
@@ -1347,45 +1347,77 @@ def build_html_table(rows: list) -> str:
 def main():
     import streamlit.components.v1 as components
 
-    # ── CSS global — Paleta TAG light ────────────────────────────────────────
+    # ── CSS global — TAG brand (dark sidebar + light content) ────────────────
     st.markdown("""
     <style>
-      /* Fundo geral */
-      .stApp, [data-testid="stAppViewContainer"], .main {
-          background-color: #F7F5EE !important;
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+      html, body, [class*="css"] { font-family:'Inter','Segoe UI',Tahoma,sans-serif; }
+
+      /* Fundo geral (conteúdo) */
+      .stApp, [data-testid="stAppViewContainer"], .main,
+      [data-testid="stMain"], section.main {
+          background-color: #F5F3EE !important;
       }
-      /* Sidebar */
-      [data-testid="stSidebar"] {
-          background-color: #FFFFFF !important;
-          border-right: 1px solid #E2DDD0 !important;
-      }
-      /* Conteúdo principal */
       .main .block-container {
-          background-color: #F7F5EE;
-          padding-top: 0.8rem;
+          background-color: #F5F3EE;
+          padding-top: 0rem;
           max-width: 100%;
       }
+
+      /* ── Sidebar escura (estilo TAG brand) ── */
+      [data-testid="stSidebar"] {
+          background: linear-gradient(180deg, #3D0816 0%, #1A0A10 100%) !important;
+          border-right: 1px solid #63132233 !important;
+      }
+      /* Texto na sidebar — off-white */
+      [data-testid="stSidebar"] *,
+      [data-testid="stSidebar"] p,
+      [data-testid="stSidebar"] span,
+      [data-testid="stSidebar"] div,
+      [data-testid="stSidebar"] label,
+      [data-testid="stSidebar"] a {
+          color: #E6E4DB !important;
+          -webkit-text-fill-color: #E6E4DB !important;
+      }
+      [data-testid="stSidebar"] a:hover {
+          color: #FF8853 !important;
+          -webkit-text-fill-color: #FF8853 !important;
+      }
+      [data-testid="stSidebar"] hr {
+          border-color: #63132250 !important;
+          margin: 12px 0 !important;
+      }
+
+      /* Textos no conteúdo principal */
+      [data-testid="stMain"] p,
+      [data-testid="stMain"] span,
+      [data-testid="stMain"] div,
+      [data-testid="stMain"] label { color: #2C1810 !important; }
+
       /* Esconde elementos padrão Streamlit */
       #MainMenu { visibility: hidden; }
       footer    { visibility: hidden; }
       header[data-testid="stHeader"] { visibility: hidden; height:0; }
+
       /* Spinner */
-      .stSpinner > div > div { border-top-color: #630D24 !important; }
-      /* Botão */
+      .stSpinner > div > div { border-top-color: #FF8853 !important; }
+
+      /* Botão Atualizar */
       .stButton > button {
-          background-color: #EFEDE5 !important;
-          color: #1C1816 !important;
-          border: 1px solid #E2DDD0 !important;
+          background-color: rgba(255,255,255,0.15) !important;
+          color: #FFFFFF !important;
+          -webkit-text-fill-color: #FFFFFF !important;
+          border: 1px solid rgba(255,255,255,0.35) !important;
           border-radius: 8px !important;
           font-size: 12px !important;
-          padding: 4px 12px !important;
+          font-weight: 600 !important;
+          padding: 4px 14px !important;
       }
       .stButton > button:hover {
-          border-color: #630D24 !important;
-          color: #630D24 !important;
+          background-color: rgba(255,255,255,0.25) !important;
+          border-color: rgba(255,255,255,0.6) !important;
       }
-      /* Textos gerais */
-      p, div, span, label { color: #1C1816; }
+
       /* Oculta navegação nativa de páginas do Streamlit */
       section[data-testid="stSidebar"] nav,
       [data-testid="stSidebarNav"],
@@ -1395,52 +1427,55 @@ def main():
       [data-testid="stSidebarCollapseButton"] { display: none !important; }
       section[data-testid="stSidebar"] {
         transform: none !important;
-        min-width: 18rem !important;
-        width: 18rem !important;
+        min-width: 17rem !important;
+        width: 17rem !important;
         display: flex !important;
       }
     </style>
     """, unsafe_allow_html=True)
 
-    # ── Sidebar — logo TAG ────────────────────────────────────────────────────
+    # ── Sidebar — logo TAG + navegação ───────────────────────────────────────
     with st.sidebar:
         st.image("tag_logo.png", use_container_width=True)
         st.markdown("""
-        <div style="padding:4px 16px 20px 16px; margin-top:4px;">
-          <div style="color:#630D24; font-size:9px; letter-spacing:1.5px;
-                      text-transform:uppercase; font-weight:700; margin-bottom:8px;">
+        <div style="padding:8px 16px 20px 16px;">
+          <div style="font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+                      font-weight:700; color:#FF8853 !important;
+                      -webkit-text-fill-color:#FF8853 !important; margin-bottom:10px;">
             MONITOR
           </div>
-          <div style="color:#1C1816; font-size:13px; padding:7px 10px;
-                      background:#EFEDE5; border-radius:8px;
-                      border-left:3px solid #630D24; white-space:nowrap;">
-            Monitor - Fundos Condominiais
+          <div style="font-size:13px; font-weight:600; padding:9px 12px;
+                      background:rgba(99,13,36,0.55); border-radius:8px;
+                      border-left:3px solid #FF8853; white-space:nowrap;
+                      color:#E6E4DB !important; -webkit-text-fill-color:#E6E4DB !important;">
+            Fundos Condominiais
           </div>
-          <div style="font-size:13px; padding:7px 10px; margin-top:4px;
-                      background:#F7F5EE; border-radius:8px;
-                      border-left:3px solid #E2DDD0; white-space:nowrap;">
+          <div style="font-size:13px; padding:9px 12px; margin-top:4px;
+                      border-radius:8px; white-space:nowrap;">
             <a href="/Fundos_Exclusivos" target="_self"
-               style="color:#6A6864; text-decoration:none;">
-              Monitor - Fundos Exclusivos
+               style="color:#9A9590 !important; -webkit-text-fill-color:#9A9590 !important;
+                      text-decoration:none; font-size:13px;">
+              Fundos Exclusivos
             </a>
           </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # ── Cabeçalho da página ───────────────────────────────────────────────────
-    col_title, col_btn = st.columns([5, 1])
-    with col_title:
+    # ── Topbar full-width (burgundy, estilo carteiras-modelo) ─────────────────
+    col_hd, col_btn = st.columns([6, 1])
+    with col_hd:
         st.markdown(
             f"""
-            <div style="padding:4px 0 10px 0;">
-              <div style="font-size:21px; font-weight:600; color:#1C1816;
-                          font-family:'Aalto Sans','Segoe UI',Tahoma,system-ui,sans-serif; letter-spacing:0.4px;">
+            <div style="background:#630D24; border-radius:12px;
+                        padding:16px 22px; margin-bottom:16px;
+                        box-shadow:0 1px 4px rgba(28,24,22,.14);">
+              <div style="font-size:20px; font-weight:700; color:#FFFFFF;
+                          -webkit-text-fill-color:#FFFFFF !important;
+                          font-family:'Inter','Segoe UI',Tahoma,sans-serif; letter-spacing:0.3px;">
                 Monitor de Fundos Condominiais
               </div>
-              <div style="height:2px; background:linear-gradient(to right,#630D24,transparent);
-                          margin-top:6px;"></div>
-              <div style="color:#6A6864; font-size:11px; margin-top:6px;
-                          font-family:'Aalto Sans','Segoe UI',Tahoma,system-ui,sans-serif;">
+              <div style="color:rgba(255,255,255,0.72); font-size:12.5px; margin-top:3px;
+                          -webkit-text-fill-color:rgba(255,255,255,0.72) !important;">
                 Atualizado em {datetime.now(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y às %H:%M')}
               </div>
             </div>
