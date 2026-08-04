@@ -78,6 +78,9 @@ table.fund tfoot tr.tot-row td{background:#10141c;font-weight:800;border-top:2px
 table.fund tfoot tr.tot-row td:first-child{color:var(--accent)}
 tr.cls-row .cls-name{display:flex;align-items:center;gap:7px}
 tr.fund-row:hover{background:#11151d}
+tr.ig-row{opacity:.5}
+tr.ig-row .ig-val{color:var(--muted);text-decoration:line-through}
+.ig-lbl{font-size:9px;color:var(--muted);white-space:nowrap}
 .fname{max-width:360px}
 .fname .ticker{color:var(--muted);font-size:11px}
 .buy-t{color:var(--buy)}.sell-t{color:var(--sell)}.mut{color:var(--muted)}.zero{color:#3a4356}
@@ -123,6 +126,8 @@ tr.fund-row:hover{background:#11151d}
     <span class="chip" data-dnd="D">D</span>
     <span class="chip" data-dnd="ND">ND</span>
     <span class="sep2"></span>
+    <span class="chip active" id="min-toggle" title="Ignora ajuste &lt; $2k em ativo que o cliente já tem. Compra de ativo novo e zeragem de posição entram sempre.">Mín. ordem $2k</span>
+    <span class="sep2"></span>
     <span class="flabel">Custódia</span>
     <select id="cust-sel" class="cust-sel"></select>
     <span class="cli-n" id="cli-n"></span>
@@ -158,9 +163,25 @@ DATA.forEach(c=>{
   c.classes.forEach(cl=>{cl.d=cl.t-cl.a; cl.funds.forEach(f=>{ if(f.s!=='model')held+=f.a; if(f.s==='both')matched+=f.a; });});
   c.turnover=c.buy; c.matchPct=held>0?matched/held:0; c.heldTot=held;
 });
+// Regra do mínimo de $2k por ordem:
+//  - "model" (ativo novo / incluir): compra SEMPRE (sem mínimo).
+//  - "held" (zerar a posição / sair): executa SEMPRE (não deixa resíduo).
+//  - "both"/"cash" (ativo já em carteira, ajuste parcial): ignora se |delta| < $2k.
+let MINORDER=2000;
+function recomputeOrders(){
+  DATA.forEach(c=>{
+    let buy=0,sell=0;
+    c.classes.forEach(cl=>cl.funds.forEach(f=>{
+      f.ig = (f.s==='both' || f.s==='cash') && Math.abs(f.d) < MINORDER;
+      if(!f.ig){ if(f.d>0) buy+=f.d; else if(f.d<0) sell+=f.d; }
+    }));
+    c.buyN=buy; c.sellN=sell;
+  });
+}
+recomputeOrders();
 let dndF='all', custF='all';
 function renderKPIs(list){
-  const plt=list.reduce((a,c)=>a+c.pl,0), tbuy=list.reduce((a,c)=>a+c.buy,0), tsell=list.reduce((a,c)=>a+c.sell,0);
+  const plt=list.reduce((a,c)=>a+c.pl,0), tbuy=list.reduce((a,c)=>a+c.buyN,0), tsell=list.reduce((a,c)=>a+c.sellN,0);
   const fp=[]; if(custF!=='all')fp.push(custF); if(dndF!=='all')fp.push(dndF);
   const scope=fp.length?fp.join(' · ')+' (31/07)':'offshore (31/07/2026)';
   const kpis=[
@@ -198,14 +219,15 @@ document.querySelectorAll('.selbar .chip[data-dnd]').forEach(ch=>ch.onclick=()=>
   ch.classList.add('active'); dndF=ch.dataset.dnd; applyFilters();
 });
 custSel.onchange=e=>{custF=e.target.value; applyFilters();};
+document.getElementById('min-toggle').onclick=function(){MINORDER=this.classList.toggle('active')?2000:0; recomputeOrders(); applyFilters();};
 updateCsvBtn();
 document.getElementById('btn-csv-cust').onclick=()=>{
   const fo=filtOrder();
-  const H=['Custodia','Cliente','Perfil','DND','Classe','Ativo','Status','Atual_USD','Delta_USD','Alvo_USD','Alvo_pct'];
+  const H=['Custodia','Cliente','Perfil','DND','Classe','Ativo','Status','Atual_USD','Delta_USD','Alvo_USD','Alvo_pct','Ordem_ignorada_min2k'];
   const L=[H.join(';')];
   fo.forEach(i=>{const c=DATA[i], cu=custOf(i);
     c.classes.forEach(cl=>cl.funds.forEach(f=>{
-      L.push([`"${cu}"`,`"${c.nome}"`,c.perfil,(c.off&&c.off.dnd)||'',`"${cl.cls}"`,`"${f.n.replace(/"/g,'')}"`,f.s,Math.round(f.a),Math.round(f.d),Math.round(f.t),(f.t/c.pl*100).toFixed(2)].join(';'));
+      L.push([`"${cu}"`,`"${c.nome}"`,c.perfil,(c.off&&c.off.dnd)||'',`"${cl.cls}"`,`"${f.n.replace(/"/g,'')}"`,f.s,Math.round(f.a),Math.round(f.d),Math.round(f.t),(f.t/c.pl*100).toFixed(2),(f.ig?'Sim':'')].join(';'));
     }));
   });
   const lbl=(custF==='all'?'filtro':custF).replace(/[^A-Za-z0-9]/g,'_');
@@ -233,15 +255,16 @@ function render(){
       <td class="num">${fmtUSD(cl.t)}</td><td class="num mut">${pct(cl.t/c.pl)}</td>
     </tr>`;
     cl.funds.slice().sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).forEach(f=>{
-      const d=f.d, dc=d>0.5?'buy':d<-0.5?'sell':'';
+      const d=f.d, ig=f.ig, dc=ig?'':(d>0.5?'buy':d<-0.5?'sell':'');
       const nm=f.n.replace(/\s*\(([^)]+)\)\s*$/,''); const tk=/\(([^)]+)\)\s*$/.exec(f.n);
       const tag={both:'tag-both',held:'tag-held',model:'tag-model',cash:'tag-cash'}[f.s];
       const tlab={both:'casado',held:'sair',model:'incluir',cash:'caixa'}[f.s];
-      rows+=`<tr class="fund-row">
+      const dcell = Math.abs(d)<1?'—':(ig?`<span class="ig-val">${sgnM(d)}</span> <span class="ig-lbl">&lt;$2k</span>`:sgnM(d));
+      rows+=`<tr class="fund-row${ig?' ig-row':''}">
         <td class="fname">${nm}${tk?` <span class="ticker">${tk[1]}</span>`:''}<span class="tag-s ${tag}">${tlab}</span></td>
         <td class="num">${f.a>0.5?fmtUSD(f.a):'<span class=zero>—</span>'}</td>
         <td class="num mut">${f.a>0.5?pct(f.a/c.pl):''}</td>
-        <td class="num delta-cell ${dc?dc+'-t':'zero'}">${Math.abs(d)<1?'—':sgnM(d)}</td>
+        <td class="num delta-cell ${ig?'zero':(dc?dc+'-t':'zero')}">${dcell}</td>
         <td class="num">${f.t>0.5?fmtUSD(f.t):'<span class=zero>—</span>'}</td>
         <td class="num mut">${f.t>0.5?pct(f.t/c.pl):''}</td>
       </tr>`;
@@ -256,7 +279,7 @@ function render(){
       <span class="meta">Modelo: <b style="color:var(--txt)">${c.model}</b> · PL <b style="color:var(--txt)">${fmtUSD(c.pl)}</b></span>
     </div>
     <div style="display:flex;gap:26px;flex-wrap:wrap;margin:12px 0 14px">
-      <div><div class="mut" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Realocar (bruto)</div><div style="font-size:20px;font-weight:700;color:var(--accent)">${fmtM(c.buy)}</div><div class="mut" style="font-size:11px">${(c.buy/c.pl*100).toFixed(0)}% do PL · comprar ${fmtM(c.buy)} / reduzir ${fmtM(c.sell)}</div></div>
+      <div><div class="mut" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Realocar</div><div style="font-size:20px;font-weight:700;color:var(--accent)">${fmtM(c.buyN)}</div><div class="mut" style="font-size:11px">${(c.buyN/c.pl*100).toFixed(0)}% do PL · comprar ${fmtM(c.buyN)} / reduzir ${fmtM(c.sellN)}</div></div>
       <div><div class="mut" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Casamento c/ modelo</div><div style="font-size:20px;font-weight:700">${pct(c.matchPct)}</div><div class="mut" style="font-size:11px">do valor detido casou com fundo do modelo</div></div>
     </div>
     <div class="csub" style="margin-bottom:8px"><b style="color:var(--txt)">Como ficaria</b> — alocação por classe: atual (topo) vs. alvo (baixo)</div>
@@ -286,8 +309,8 @@ sel.onchange=e=>{cur=+e.target.value;render();};
 document.getElementById('prev').onclick=()=>{const fo=filtOrder();const p=fo.indexOf(cur);cur=fo[(p-1+fo.length)%fo.length];render();};
 document.getElementById('next').onclick=()=>{const fo=filtOrder();const p=fo.indexOf(cur);cur=fo[(p+1)%fo.length];render();};
 document.getElementById('btn-csv').onclick=()=>{
-  const c=DATA[cur];const H=['Classe','Ativo','Status','Atual_USD','Atual_pct','Delta_USD','Alvo_USD','Alvo_pct'];const L=[H.join(';')];
-  c.classes.forEach(cl=>cl.funds.forEach(f=>{L.push([`"${cl.cls}"`,`"${f.n.replace(/"/g,'')}"`,f.s,Math.round(f.a),(f.a/c.pl*100).toFixed(2),Math.round(f.d),Math.round(f.t),(f.t/c.pl*100).toFixed(2)].join(';'));}));
+  const c=DATA[cur];const H=['Classe','Ativo','Status','Atual_USD','Atual_pct','Delta_USD','Alvo_USD','Alvo_pct','Ordem_ignorada_min2k'];const L=[H.join(';')];
+  c.classes.forEach(cl=>cl.funds.forEach(f=>{L.push([`"${cl.cls}"`,`"${f.n.replace(/"/g,'')}"`,f.s,Math.round(f.a),(f.a/c.pl*100).toFixed(2),Math.round(f.d),Math.round(f.t),(f.t/c.pl*100).toFixed(2),(f.ig?'Sim':'')].join(';'));}));
   const b=new Blob(['﻿'+L.join('\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');
   a.href=URL.createObjectURL(b);a.download='realoc_offshore_'+c.nome.replace(/[^A-Za-z0-9]/g,'_')+'.csv';a.click();
 };
