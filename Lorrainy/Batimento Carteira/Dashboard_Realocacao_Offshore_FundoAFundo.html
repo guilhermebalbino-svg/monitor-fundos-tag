@@ -84,6 +84,7 @@ table.fund tfoot tr.tot-row td{background:#F3E9EB;font-weight:800;border-top:2px
 table.fund tfoot tr.tot-row td:first-child{color:var(--accent)}
 tr.cls-row .cls-name{display:flex;align-items:center;gap:7px}
 tr.fund-row:hover{background:#F6F3EC}
+tr.cash-row{background:#FBF6EC}tr.cash-row .fname{font-style:italic}
 tr.ig-row{opacity:.5}
 tr.ig-row .ig-val{color:var(--muted);text-decoration:line-through}
 .ig-lbl{font-size:9px;color:var(--muted);white-space:nowrap}
@@ -182,10 +183,20 @@ DATA.forEach(c=>{
   c.classes.forEach((cl,ci)=>{cl.d=cl.t-cl.a; cl.funds.forEach((f,fi)=>{ f.id=ci+'_'+fi; f.d0=f.d; f.t0=f.t; f.manual=false; if(f.s!=='model')held+=f.a; if(f.s==='both')matched+=f.a; });});
   c.turnover=c.buy; c.matchPct=held>0?matched/held:0; c.heldTot=held;
 });
-// Recalcula subtotais de classe e resíduo a partir dos deltas (que podem ter sido editados à mão)
+// Recalcula subtotais a partir dos deltas (editáveis). O CAIXA é o plug: absorve a
+// contrapartida de todo ajuste manual, mantendo Σ alvos = PL (o PL não muda).
 function recalcClient(c){
+  let cash=null;
+  c.classes.forEach(cl=>cl.funds.forEach(f=>{ if(f.s==='cash') cash=f; }));
+  if(cash){
+    let chg=0; c.classes.forEach(cl=>cl.funds.forEach(f=>{ if(f!==cash) chg+=(f.t-f.t0); }));
+    cash.t = cash.t0 - chg;      // contrapartida lançada no caixa
+    cash.d = cash.t - cash.a;
+  }
   c.classes.forEach(cl=>{ cl.t=cl.funds.reduce((s,f)=>s+f.t,0); cl.d=cl.t-cl.a; });
-  c.residual = c.pl - c.classes.reduce((s,cl)=>s+cl.t,0); // sobra não alocada (Alvo < PL) ⇒ vira caixa
+  c.residual = c.pl - c.classes.reduce((s,cl)=>s+cl.t,0); // ~0 (só arredondamento)
+  c.cashFinal = cash?cash.t:null;
+  c.cashNeg = cash && cash.t < -1;   // caixa negativo ⇒ falta financiar com venda
   c.edited = c.classes.some(cl=>cl.funds.some(f=>f.manual));
 }
 // Regra do mínimo de $2k por ordem:
@@ -197,7 +208,8 @@ function recomputeOrders(){
   DATA.forEach(c=>{
     let buy=0,sell=0;
     c.classes.forEach(cl=>cl.funds.forEach(f=>{
-      f.ig = !f.manual && (f.s==='both' || f.s==='cash') && Math.abs(f.d) < MINORDER;
+      if(f.s==='cash'){ f.ig=false; return; }   // caixa é contrapartida, não é ordem
+      f.ig = !f.manual && f.s==='both' && Math.abs(f.d) < MINORDER;
       if(!f.ig){ if(f.d>0) buy+=f.d; else if(f.d<0) sell+=f.d; }
     }));
     c.buyN=buy; c.sellN=sell;
@@ -289,13 +301,17 @@ function render(){
       const nm=f.n.replace(/\s*\(([^)]+)\)\s*$/,''); const tk=/\(([^)]+)\)\s*$/.exec(f.n);
       const tag={both:'tag-both',held:'tag-held',model:'tag-model',cash:'tag-cash'}[f.s];
       const tlab={both:'casado',held:'sair',model:'incluir',cash:'caixa'}[f.s];
-      rows+=`<tr class="fund-row${ig?' ig-row':''}">
+      const isCash=f.s==='cash';
+      const deltaCell = isCash
+        ? `<td class="num delta-cell ${dc?dc+'-t':'zero'}" title="Contrapartida: o caixa absorve todo ajuste (PL constante)">${Math.abs(d)<1?'—':sgnM(d)} <span class="ig-lbl">contrap.</span></td>`
+        : `<td class="num delta-cell ${ig?'zero':(dc?dc+'-t':'zero')}"><input class="dedit${f.manual?' edited':''}" data-id="${f.id}" value="${Math.round(d)}" title="Δ editável — Enter/sair para aplicar. Ex.: alt indisponível → 0">${ig?' <span class="ig-lbl">&lt;$2k</span>':''}</td>`;
+      rows+=`<tr class="fund-row${ig?' ig-row':''}${isCash?' cash-row':''}">
         <td class="fname">${nm}${tk?` <span class="ticker">${tk[1]}</span>`:''}<span class="tag-s ${tag}">${tlab}</span></td>
         <td class="num">${f.a>0.5?fmtUSD(f.a):'<span class=zero>—</span>'}</td>
         <td class="num mut">${f.a>0.5?pct(f.a/c.pl):''}</td>
-        <td class="num delta-cell ${ig?'zero':(dc?dc+'-t':'zero')}"><input class="dedit${f.manual?' edited':''}" data-id="${f.id}" value="${Math.round(d)}" title="Δ editável — Enter/sair para aplicar. Ex.: alt indisponível → 0">${ig?' <span class="ig-lbl">&lt;$2k</span>':''}</td>
-        <td class="num">${f.t>0.5?fmtUSD(f.t):'<span class=zero>—</span>'}</td>
-        <td class="num mut">${f.t>0.5?pct(f.t/c.pl):''}</td>
+        ${deltaCell}
+        <td class="num ${isCash&&f.t<-1?'sell-t':''}">${Math.abs(f.t)>0.5?fmtUSD(f.t):'<span class=zero>—</span>'}</td>
+        <td class="num mut">${Math.abs(f.t)>0.5?pct(f.t/c.pl):''}</td>
       </tr>`;
     });
   });
@@ -328,7 +344,7 @@ function render(){
       </thead>
       <tbody>${rows}</tbody>
       <tfoot><tr class="tot-row">
-        <td>TOTAL &mdash; PL da carteira${Math.abs(c.residual)>1?`<span class="resid">resíduo não alocado (→ caixa): <b>${sgnM(c.residual)}</b></span>`:''}</td>
+        <td>TOTAL &mdash; PL da carteira${c.cashNeg?`<span class="resid" style="color:var(--sell)">&#9888; caixa ficaria negativo (${fmtM(c.cashFinal)}) — falta financiar com venda</span>`:(c.edited?`<span class="resid">contrapartida lançada no caixa — PL constante, caixa final ${fmtM(c.cashFinal)}</span>`:'')}</td>
         <td class="num">${fmtUSD(totA)}</td><td class="num">${pct(totA/c.pl)}</td>
         <td class="num ${totD>1?'buy-t':totD<-1?'sell-t':'mut'}">${Math.abs(totD)<1?'$0':sgnM(totD)}</td>
         <td class="num">${fmtUSD(totT)}</td><td class="num">${pct(totT/c.pl)}</td>
