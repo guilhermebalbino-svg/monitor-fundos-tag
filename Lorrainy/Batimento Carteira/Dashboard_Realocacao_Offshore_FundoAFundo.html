@@ -11,27 +11,28 @@
   --bg:#F7F5EE;--panel:#FFFFFF;--panel2:#EFEDE5;--border:#E2DDD0;
   --txt:#1C1816;--muted:#6A6864;--accent:#630D24;
   --nd:#3A6B8C;--neg:#B0223A;--pos:#2F7A4E;--buy:#2F7A4E;--sell:#B0223A;
-  --c-g7:#002A6E;--c-alt:#E66B33;--c-cred:#8A4F7D;--c-comm:#C77D3A;--c-eq:#2F7A4E;--c-hedge:#ED5A6E;--c-cash:#9A978F;
+  /* cores das classes = donut do simulador Carteiras Modelo */
+  --c-g7:#B25E2C;--c-alt:#6E1228;--c-cred:#3E8A5C;--c-comm:#C4A86A;--c-eq:#3E6E96;--c-hedge:#9A3B4E;--c-cash:#7E5AA6;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Aalto Sans','Segoe UI',Tahoma,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);padding:24px;line-height:1.4}
 .wrap{max-width:1400px;margin:0 auto}
-.topbar{display:flex;align-items:center;gap:18px;background:var(--accent);color:#fff;border-radius:12px;padding:14px 22px;margin-bottom:18px;flex-wrap:wrap;box-shadow:0 1px 4px rgba(28,24,22,.14)}
-.topbar .logo{height:42px;width:auto;display:block}
-.topbar .tsep{width:1px;height:38px;background:rgba(255,255,255,.28)}
-.topbar h1{font-size:20px;font-weight:600;color:#fff;line-height:1.15}
+.topbar{display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#7A1230 0%,#630D24 52%,#520A1E 100%);color:#fff;border-radius:14px;padding:20px 28px;margin-bottom:18px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(99,13,36,.22)}
+.topbar .logo{height:48px;width:auto;display:block}
+.topbar .tsep{width:1px;height:44px;background:rgba(255,255,255,.28)}
+.topbar h1{font-size:22px;font-weight:600;color:#fff;line-height:1.15}
 .topbar .sub{color:rgba(255,255,255,.72);font-size:12.5px;margin-top:3px}
 .topbar .rgt{margin-left:auto;text-align:right}
 .topbar .date{color:#FFC7A6;font-size:13px;font-weight:700}
 .intro{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:11px 15px;font-size:12.5px;color:var(--muted);margin-bottom:16px}
 .intro b{color:var(--txt)}.intro code{background:var(--panel2);padding:1px 6px;border-radius:4px;color:var(--accent)}
 .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px}
-.kpi{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px}
+.kpi{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 1px 3px rgba(28,24,22,.05)}
 .kpi .label{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;min-height:26px}
 .kpi .val{font-size:20px;font-weight:700}
 .kpi.accent .val{color:var(--accent)}.kpi.buy .val{color:var(--buy)}.kpi.sell .val{color:var(--sell)}
 .kpi .tag{font-size:11px;color:var(--muted);margin-top:3px}
-.selbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:16px;position:sticky;top:0;z-index:10}
+.selbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:16px;position:sticky;top:0;z-index:10;box-shadow:0 1px 3px rgba(28,24,22,.05)}
 .selbar label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
 .selbar select{background:var(--panel2);border:1px solid var(--border);color:var(--txt);padding:8px 12px;border-radius:8px;font-size:14px;font-weight:600;outline:none;min-width:300px;cursor:pointer}
 .selbar select:focus{border-color:var(--accent)}
@@ -47,7 +48,7 @@ body{font-family:'Aalto Sans','Segoe UI',Tahoma,system-ui,-apple-system,sans-ser
 .selbar .cust-sel:focus{border-color:var(--accent)}
 .btn.btn-cust{background:rgba(47,122,78,.12);border-color:rgba(47,122,78,.42);color:#2F7A4E}
 .btn.btn-cust:hover{border-color:#2F7A4E}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(28,24,22,.05)}
 .card h2{font-size:15px;font-weight:600;margin-bottom:3px}
 .card .csub{font-size:12px;color:var(--muted);margin-bottom:14px}
 .cli-hd{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:baseline;margin-bottom:4px}
