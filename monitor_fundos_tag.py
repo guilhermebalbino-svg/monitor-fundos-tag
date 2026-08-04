@@ -1149,23 +1149,23 @@ def get_benchmark_returns(key: str, ref_date: date,
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# HTML TABLE RENDERING  (dark theme)
+# HTML TABLE RENDERING  — Paleta TAG oficial (light)
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Paleta dark
-COLOR_HEADER    = "#7B2D40"   # maroon — bordas
+# Paleta TAG oficial — light
+COLOR_HEADER    = "#630D24"   # vinho TAG — accent
 COLOR_HDR_TEXT  = "#FFFFFF"
-COLOR_ORANGE    = "#E8801A"   # laranja TAG — texto de cabeçalhos
-COLOR_FUND_BG   = "#1a0d0d"   # fundo linhas de fundo
-COLOR_BMARK_BG  = "#120808"   # fundo linhas de benchmark (mais escuro)
-COLOR_POS_BG    = "#163316"   # verde escuro — retorno positivo
-COLOR_POS_TEXT  = "#8fd68f"   # verde claro — texto retorno positivo
-COLOR_NEG_BG    = "#331616"   # vermelho escuro — retorno negativo
-COLOR_NEG_TEXT  = "#d68f8f"   # vermelho claro — texto retorno negativo
-COLOR_EMPTY_BG   = "#1a1212"   # fundo neutro p/ células sem dado (visível, sem destaque)
-COLOR_EMPTY_TEXT = "#554444"   # texto "-" visível sobre fundo escuro
-COLOR_META_TEXT = "#b09090"   # texto secundário (gestão, liquidez, etc.)
-COLOR_DATE_TEXT = "#c8b8b8"   # texto datas
+COLOR_ORANGE    = "#630D24"   # accent TAG — seções
+COLOR_FUND_BG   = "#FFFFFF"   # fundo linhas de fundo
+COLOR_BMARK_BG  = "#EFEDE5"   # fundo linhas de benchmark
+COLOR_POS_BG    = "#EBF4EF"   # verde claro — retorno positivo
+COLOR_POS_TEXT  = "#2F7A4E"   # verde escuro — texto retorno positivo
+COLOR_NEG_BG    = "#FAECEE"   # vermelho claro — retorno negativo
+COLOR_NEG_TEXT  = "#B0223A"   # vermelho escuro — texto retorno negativo
+COLOR_EMPTY_BG   = "#EFEDE5"   # fundo neutro p/ células sem dado
+COLOR_EMPTY_TEXT = "#9A978F"   # texto "-" muted
+COLOR_META_TEXT = "#6A6864"   # texto secundário (gestão, liquidez, etc.)
+COLOR_DATE_TEXT = "#6A6864"   # texto datas
 
 
 def fmt_pct(v, decimals=2) -> str:
@@ -1217,11 +1217,11 @@ def _num_cell(v_str: str, raw, bg_override: str = "", na_color: str = "") -> str
 
 
 def build_html_table(rows: list) -> str:
-    """Constrói tabela HTML estilizada (dark theme)."""
+    """Constrói tabela HTML estilizada — paleta TAG light."""
     TH = (
-        f"background:{COLOR_BMARK_BG}; color:#c8b8a8; "
+        f"background:{COLOR_BMARK_BG}; color:#6A6864; "
         "padding:7px 12px; text-align:center; font-size:11px; font-weight:600; "
-        "border-bottom:1px solid #3a2020; border-right:1px solid #2a1010; "
+        "border-bottom:1px solid #E2DDD0; border-right:1px solid #E2DDD0; "
         "white-space:nowrap; letter-spacing:0.6px;"
     )
     TH_L = TH.replace("text-align:center", "text-align:left")
@@ -1248,19 +1248,19 @@ def build_html_table(rows: list) -> str:
 
     html = f"""
     <style>
-      body  {{ background:#0d0608; margin:0; padding:4px 0;
-               font-family:'Segoe UI',Arial,sans-serif; }}
+      body  {{ background:#F7F5EE; margin:0; padding:4px 0;
+               font-family:'Aalto Sans','Segoe UI',Tahoma,system-ui,sans-serif; }}
       table {{ border-collapse:collapse; width:100%; font-size:12px; }}
-      td    {{ border-bottom:1px solid #2a1010; white-space:nowrap; }}
-      tr:hover td {{ filter:brightness(1.12); }}
+      td    {{ border-bottom:1px solid #E2DDD0; white-space:nowrap; }}
+      tr:hover td {{ background:#F6F3EC !important; }}
       .sec td {{
-        background:#0d0608; color:{COLOR_ORANGE}; font-weight:700;
+        background:#F7F5EE; color:{COLOR_ORANGE}; font-weight:700;
         font-size:11px; text-transform:uppercase; letter-spacing:2px;
-        padding:10px 12px 4px 12px; border-bottom:none; border-top:none;
+        padding:10px 12px 4px 12px; border-bottom:none; border-top:1px solid #E2DDD0;
       }}
       .fund td {{ background:{COLOR_FUND_BG}; }}
       .bmark td {{ background:{COLOR_BMARK_BG}; font-style:italic; }}
-      .name  {{ text-align:left;   padding:5px 12px; color:#e8d8d8;
+      .name  {{ text-align:left;   padding:5px 12px; color:#1C1816;
                 font-weight:500; }}
       .bname {{ text-align:left;   padding:5px 12px 5px 24px;
                 color:{COLOR_META_TEXT}; font-style:italic; }}
@@ -1347,21 +1347,21 @@ def build_html_table(rows: list) -> str:
 def main():
     import streamlit.components.v1 as components
 
-    # ── CSS global dark theme ─────────────────────────────────────────────────
+    # ── CSS global — Paleta TAG light ────────────────────────────────────────
     st.markdown("""
     <style>
       /* Fundo geral */
       .stApp, [data-testid="stAppViewContainer"], .main {
-          background-color: #0d0608 !important;
+          background-color: #F7F5EE !important;
       }
       /* Sidebar */
       [data-testid="stSidebar"] {
-          background-color: #0a0406 !important;
-          border-right: 1px solid #3a1515 !important;
+          background-color: #FFFFFF !important;
+          border-right: 1px solid #E2DDD0 !important;
       }
       /* Conteúdo principal */
       .main .block-container {
-          background-color: #0d0608;
+          background-color: #F7F5EE;
           padding-top: 0.8rem;
           max-width: 100%;
       }
@@ -1370,19 +1370,22 @@ def main():
       footer    { visibility: hidden; }
       header[data-testid="stHeader"] { visibility: hidden; height:0; }
       /* Spinner */
-      .stSpinner > div > div { border-top-color: #c0a080 !important; }
+      .stSpinner > div > div { border-top-color: #630D24 !important; }
       /* Botão */
       .stButton > button {
-          background-color: #1e0a10 !important;
-          color: #c8a8a8 !important;
-          border: none !important;
-          border-radius: 3px !important;
+          background-color: #EFEDE5 !important;
+          color: #1C1816 !important;
+          border: 1px solid #E2DDD0 !important;
+          border-radius: 8px !important;
           font-size: 12px !important;
           padding: 4px 12px !important;
       }
-      .stButton > button:hover { background-color: #3a1020 !important; }
+      .stButton > button:hover {
+          border-color: #630D24 !important;
+          color: #630D24 !important;
+      }
       /* Textos gerais */
-      p, div, span, label { color: #e0d0d0; }
+      p, div, span, label { color: #1C1816; }
       /* Oculta navegação nativa de páginas do Streamlit */
       section[data-testid="stSidebar"] nav,
       [data-testid="stSidebarNav"],
@@ -1404,20 +1407,20 @@ def main():
         st.image("tag_logo.png", use_container_width=True)
         st.markdown("""
         <div style="padding:4px 16px 20px 16px; margin-top:4px;">
-          <div style="color:#7B2D40; font-size:9px; letter-spacing:1.5px;
+          <div style="color:#630D24; font-size:9px; letter-spacing:1.5px;
                       text-transform:uppercase; font-weight:700; margin-bottom:8px;">
             MONITOR
           </div>
-          <div style="color:#e8d8d8; font-size:13px; padding:7px 10px;
-                      background:#1a0c0c; border-radius:3px;
-                      border-left:3px solid #7B2D40; white-space:nowrap;">
+          <div style="color:#1C1816; font-size:13px; padding:7px 10px;
+                      background:#EFEDE5; border-radius:8px;
+                      border-left:3px solid #630D24; white-space:nowrap;">
             Monitor - Fundos Condominiais
           </div>
           <div style="font-size:13px; padding:7px 10px; margin-top:4px;
-                      background:#1a0c0c; border-radius:3px;
-                      border-left:3px solid #444; white-space:nowrap;">
+                      background:#F7F5EE; border-radius:8px;
+                      border-left:3px solid #E2DDD0; white-space:nowrap;">
             <a href="/Fundos_Exclusivos" target="_self"
-               style="color:#b09090; text-decoration:none;">
+               style="color:#6A6864; text-decoration:none;">
               Monitor - Fundos Exclusivos
             </a>
           </div>
@@ -1430,14 +1433,14 @@ def main():
         st.markdown(
             f"""
             <div style="padding:4px 0 10px 0;">
-              <div style="font-size:21px; font-weight:600; color:#ffffff;
-                          font-family:'Segoe UI',Arial,sans-serif; letter-spacing:0.4px;">
+              <div style="font-size:21px; font-weight:600; color:#1C1816;
+                          font-family:'Aalto Sans','Segoe UI',Tahoma,system-ui,sans-serif; letter-spacing:0.4px;">
                 Monitor de Fundos Condominiais
               </div>
-              <div style="height:2px; background:linear-gradient(to right,#E8801A,transparent);
+              <div style="height:2px; background:linear-gradient(to right,#630D24,transparent);
                           margin-top:6px;"></div>
-              <div style="color:#7a6060; font-size:11px; margin-top:6px;
-                          font-family:'Segoe UI',Arial,sans-serif;">
+              <div style="color:#6A6864; font-size:11px; margin-top:6px;
+                          font-family:'Aalto Sans','Segoe UI',Tahoma,system-ui,sans-serif;">
                 Atualizado em {datetime.now(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y às %H:%M')}
               </div>
             </div>
