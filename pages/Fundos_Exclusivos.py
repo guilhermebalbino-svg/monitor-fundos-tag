@@ -110,18 +110,25 @@ _CNPJS_EXCL = frozenset(
     f["cnpj"] for g in FUND_GROUPS_EXCL for f in g["funds"]
 )
 
-# ── Colors — Paleta TAG oficial (light) ───────────────────────────────────────
-COLOR_ORANGE    = "#630D24"
+# Paleta TAG oficial: #630D24 (vinho) + #E6E4DB (offwhite)
+_TAG_VINHO    = "#630D24"
+_TAG_OFFWHITE = "#E6E4DB"
+_BORDER       = "#D6D3CA"
+_TXT_DARK     = "#1C0A10"
+_TXT_MUTED    = "#7A776E"
+_BMARK_ROW    = "#EFEDE6"
+
+COLOR_ORANGE    = _TAG_VINHO
 COLOR_FUND_BG   = "#FFFFFF"
-COLOR_BMARK_BG  = "#EFEDE5"
+COLOR_BMARK_BG  = _BMARK_ROW
 COLOR_POS_BG    = "#EBF4EF"
 COLOR_POS_TEXT  = "#2F7A4E"
 COLOR_NEG_BG    = "#FAECEE"
 COLOR_NEG_TEXT  = "#B0223A"
-COLOR_EMPTY_BG  = "#EFEDE5"
-COLOR_EMPTY_TEXT = "#9A978F"
-COLOR_META_TEXT = "#6A6864"
-COLOR_DATE_TEXT = "#6A6864"
+COLOR_EMPTY_BG  = _BMARK_ROW
+COLOR_EMPTY_TEXT = "#9E9B93"
+COLOR_META_TEXT = _TXT_MUTED
+COLOR_DATE_TEXT = _TXT_MUTED
 
 # ── CVM loading ───────────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -510,9 +517,9 @@ def fmt_taxa_gestao(v) -> str:
 
 def build_html_table(data: dict) -> str:
     TH = (
-        f"background:{COLOR_BMARK_BG}; color:#6A6864; "
+        f"background:{_TAG_VINHO}; color:#FFFFFF; "
         "padding:7px 12px; text-align:center; font-size:11px; font-weight:600; "
-        "border-bottom:1px solid #E2DDD0; border-right:1px solid #E2DDD0; "
+        f"border-bottom:1px solid {_TAG_VINHO}; border-right:1px solid rgba(255,255,255,0.15); "
         "white-space:nowrap; letter-spacing:0.6px;"
     )
     TH_L = TH.replace("text-align:center", "text-align:left")
@@ -539,19 +546,19 @@ def build_html_table(data: dict) -> str:
 
     html = f"""
     <style>
-      body  {{ background:#F5F3EE; margin:0; padding:4px 0;
+      body  {{ background:{_TAG_OFFWHITE}; margin:0; padding:4px 0;
                font-family:'Inter','Segoe UI',Tahoma,system-ui,sans-serif; }}
       table {{ border-collapse:collapse; width:100%; font-size:12px; }}
-      td    {{ border-bottom:1px solid #E2DDD0; white-space:nowrap; }}
-      tr:hover td {{ background:#F6F3EC !important; }}
+      td    {{ border-bottom:1px solid {_BORDER}; white-space:nowrap; }}
+      tr:hover td {{ filter:brightness(0.97); }}
       .sec td {{
-        background:#F5F3EE; color:{COLOR_ORANGE}; font-weight:700;
+        background:{_TAG_OFFWHITE}; color:{COLOR_ORANGE}; font-weight:700;
         font-size:11px; text-transform:uppercase; letter-spacing:2px;
-        padding:10px 12px 4px 12px; border-bottom:none; border-top:1px solid #E2DDD0;
+        padding:10px 12px 4px 12px; border-bottom:none; border-top:1px solid {_BORDER};
       }}
       .fund td {{ background:{COLOR_FUND_BG}; }}
       .bmark td {{ background:{COLOR_BMARK_BG}; font-style:italic; }}
-      .name  {{ text-align:left;   padding:5px 12px; color:#1C1816; font-weight:500; }}
+      .name  {{ text-align:left;   padding:5px 12px; color:{_TXT_DARK}; font-weight:500; }}
       .bname {{ text-align:left;   padding:5px 12px 5px 24px;
                 color:{COLOR_META_TEXT}; font-style:italic; }}
       .meta  {{ text-align:center; padding:5px 12px;
@@ -627,13 +634,12 @@ def main():
       html, body, [class*="css"] { font-family:'Inter','Segoe UI',Tahoma,sans-serif; }
 
       .stApp, [data-testid="stAppViewContainer"], .main,
-      [data-testid="stMain"], section.main { background-color:#F5F3EE !important; }
-      .main .block-container { background-color:#F5F3EE; padding-top:0rem; max-width:100%; }
+      [data-testid="stMain"], section.main { background-color:#E6E4DB !important; }
+      .main .block-container { background-color:#E6E4DB; padding-top:0rem; max-width:100%; }
 
-      /* Sidebar escura */
+      /* Sidebar — #630D24 (vinho TAG) */
       [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #3D0816 0%, #1A0A10 100%) !important;
-        border-right: 1px solid #63132233 !important;
+        background:#630D24 !important; border-right:none !important;
       }
       [data-testid="stSidebar"] *,
       [data-testid="stSidebar"] p,
@@ -644,15 +650,15 @@ def main():
         color:#E6E4DB !important; -webkit-text-fill-color:#E6E4DB !important;
       }
       [data-testid="stSidebar"] a:hover {
-        color:#FF8853 !important; -webkit-text-fill-color:#FF8853 !important;
+        color:#FFFFFF !important; -webkit-text-fill-color:#FFFFFF !important;
       }
       [data-testid="stMain"] p,[data-testid="stMain"] span,
-      [data-testid="stMain"] div,[data-testid="stMain"] label { color:#2C1810 !important; }
+      [data-testid="stMain"] div,[data-testid="stMain"] label { color:#1C0A10 !important; }
 
       #MainMenu { visibility:hidden; }
       footer    { visibility:hidden; }
       header[data-testid="stHeader"] { visibility:hidden; height:0; }
-      .stSpinner > div > div { border-top-color:#FF8853 !important; }
+      .stSpinner > div > div { border-top-color:#E6E4DB !important; }
 
       section[data-testid="stSidebar"] nav,
       [data-testid="stSidebarNav"],
