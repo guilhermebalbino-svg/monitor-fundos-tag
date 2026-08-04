@@ -138,6 +138,8 @@ tr.ig-row .ig-val{color:var(--muted);text-decoration:line-through}
     <span class="sep2"></span>
     <span class="flabel">Custódia</span>
     <select id="cust-sel" class="cust-sel"></select>
+    <span class="flabel">Officer</span>
+    <select id="off-sel" class="cust-sel"></select>
     <span class="cli-n" id="cli-n"></span>
     <span style="flex:1"></span>
     <button class="btn btn-cust" id="btn-csv-cust">&#8681; CSV da custódia</button>
@@ -187,10 +189,10 @@ function recomputeOrders(){
   });
 }
 recomputeOrders();
-let dndF='all', custF='all';
+let dndF='all', custF='all', offF='all';
 function renderKPIs(list){
   const plt=list.reduce((a,c)=>a+c.pl,0), tbuy=list.reduce((a,c)=>a+c.buyN,0), tsell=list.reduce((a,c)=>a+c.sellN,0);
-  const fp=[]; if(custF!=='all')fp.push(custF); if(dndF!=='all')fp.push(dndF);
+  const fp=[]; if(custF!=='all')fp.push(custF); if(offF!=='all')fp.push('Officer '+offF); if(dndF!=='all')fp.push(dndF);
   const scope=fp.length?fp.join(' · ')+' (31/07)':'offshore (31/07/2026)';
   const kpis=[
     {label:'Clientes',val:list.length,tag:scope},
@@ -204,12 +206,15 @@ function renderKPIs(list){
 }
 renderKPIs(DATA);
 
-const sel=document.getElementById('cli-sel'), custSel=document.getElementById('cust-sel');
+const sel=document.getElementById('cli-sel'), custSel=document.getElementById('cust-sel'), offSel=document.getElementById('off-sel');
 const order=DATA.map((c,i)=>i).sort((a,b)=>DATA[b].pl-DATA[a].pl);
 const custOf=i=>(DATA[i].off&&DATA[i].off.custodia)||'—';
+const offOf=i=>(DATA[i].off&&DATA[i].off.officer)||'—';
 const custPL={}; order.forEach(i=>{const c=custOf(i);custPL[c]=(custPL[c]||0)+DATA[i].pl;});
+const offPL={}, offN={}; order.forEach(i=>{const o=offOf(i);offPL[o]=(offPL[o]||0)+DATA[i].pl;offN[o]=(offN[o]||0)+1;});
 const CUSTS=Object.keys(custPL).sort((a,b)=>custPL[b]-custPL[a]);
-const filtOrder=()=>order.filter(i=>(dndF==='all'||(DATA[i].off&&DATA[i].off.dnd===dndF))&&(custF==='all'||custOf(i)===custF));
+const OFFS=Object.keys(offPL).sort((a,b)=>offPL[b]-offPL[a]);
+const filtOrder=()=>order.filter(i=>(dndF==='all'||(DATA[i].off&&DATA[i].off.dnd===dndF))&&(custF==='all'||custOf(i)===custF)&&(offF==='all'||offOf(i)===offF));
 function buildSel(){
   const fo=filtOrder(), groups={};
   fo.forEach(i=>{(groups[custOf(i)]=groups[custOf(i)]||[]).push(i);});
@@ -218,27 +223,29 @@ function buildSel(){
   document.getElementById('cli-n').textContent=fo.length+' clientes';
 }
 custSel.innerHTML=`<option value="all">Todas (${order.length})</option>`+CUSTS.map(c=>`<option value="${c}">${c} · ${fmtM(custPL[c])}</option>`).join('');
+offSel.innerHTML=`<option value="all">Todos (${order.length})</option>`+OFFS.map(o=>`<option value="${o}">${o} · ${offN[o]} · ${fmtM(offPL[o])}</option>`).join('');
 buildSel();
 let cur=order[0];
-function updateCsvBtn(){document.getElementById('btn-csv-cust').innerHTML='&#8681; CSV '+(custF==='all'?'do filtro':custF);}
+function updateCsvBtn(){const lb=custF!=='all'?custF:(offF!=='all'?'Officer '+offF:'do filtro');document.getElementById('btn-csv-cust').innerHTML='&#8681; CSV '+lb;}
 function applyFilters(){buildSel();const fo=filtOrder();if(!fo.includes(cur))cur=fo.length?fo[0]:order[0];renderKPIs(fo.map(i=>DATA[i]));updateCsvBtn();render();}
 document.querySelectorAll('.selbar .chip[data-dnd]').forEach(ch=>ch.onclick=()=>{
   document.querySelectorAll('.selbar .chip[data-dnd]').forEach(x=>x.classList.remove('active'));
   ch.classList.add('active'); dndF=ch.dataset.dnd; applyFilters();
 });
 custSel.onchange=e=>{custF=e.target.value; applyFilters();};
+offSel.onchange=e=>{offF=e.target.value; applyFilters();};
 document.getElementById('min-toggle').onclick=function(){MINORDER=this.classList.toggle('active')?2000:0; recomputeOrders(); applyFilters();};
 updateCsvBtn();
 document.getElementById('btn-csv-cust').onclick=()=>{
   const fo=filtOrder();
-  const H=['Custodia','Cliente','Perfil','DND','Classe','Ativo','Status','Atual_USD','Delta_USD','Alvo_USD','Alvo_pct','Ordem_ignorada_min2k'];
+  const H=['Custodia','Officer','Cliente','Perfil','DND','Classe','Ativo','Status','Atual_USD','Delta_USD','Alvo_USD','Alvo_pct','Ordem_ignorada_min2k'];
   const L=[H.join(';')];
-  fo.forEach(i=>{const c=DATA[i], cu=custOf(i);
+  fo.forEach(i=>{const c=DATA[i], cu=custOf(i), of=offOf(i);
     c.classes.forEach(cl=>cl.funds.forEach(f=>{
-      L.push([`"${cu}"`,`"${c.nome}"`,c.perfil,(c.off&&c.off.dnd)||'',`"${cl.cls}"`,`"${f.n.replace(/"/g,'')}"`,f.s,Math.round(f.a),Math.round(f.d),Math.round(f.t),(f.t/c.pl*100).toFixed(2),(f.ig?'Sim':'')].join(';'));
+      L.push([`"${cu}"`,`"${of}"`,`"${c.nome}"`,c.perfil,(c.off&&c.off.dnd)||'',`"${cl.cls}"`,`"${f.n.replace(/"/g,'')}"`,f.s,Math.round(f.a),Math.round(f.d),Math.round(f.t),(f.t/c.pl*100).toFixed(2),(f.ig?'Sim':'')].join(';'));
     }));
   });
-  const lbl=(custF==='all'?'filtro':custF).replace(/[^A-Za-z0-9]/g,'_');
+  const lbl=(custF!=='all'?custF:(offF!=='all'?'officer_'+offF:'filtro')).replace(/[^A-Za-z0-9]/g,'_');
   const b=new Blob(['﻿'+L.join('\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');
   a.href=URL.createObjectURL(b);a.download='realoc_'+lbl+'_31-07.csv';a.click();
 };
