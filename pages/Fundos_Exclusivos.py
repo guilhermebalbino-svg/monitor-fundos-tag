@@ -113,20 +113,20 @@ _CNPJS_EXCL = frozenset(
 # Paleta TAG oficial: #630D24 (vinho) + #E6E4DB (offwhite)
 _TAG_VINHO    = "#630D24"
 _TAG_OFFWHITE = "#E6E4DB"
-_BORDER       = "rgba(255,255,255,0.10)"
-_TXT_DARK     = "#E6E4DB"
-_TXT_MUTED    = "rgba(230,228,219,0.65)"
-_BMARK_ROW    = "#4A0D1C"
+_BORDER       = "#D6D3CA"
+_TXT_DARK     = "#1C0A10"
+_TXT_MUTED    = "#7A776E"
+_BMARK_ROW    = "#EFEDE6"
 
 COLOR_ORANGE    = _TAG_VINHO
-COLOR_FUND_BG   = "#630D24"
+COLOR_FUND_BG   = "#FFFFFF"
 COLOR_BMARK_BG  = _BMARK_ROW
-COLOR_POS_BG    = "rgba(74,186,125,0.18)"
-COLOR_POS_TEXT  = "#6FD4A0"
-COLOR_NEG_BG    = "rgba(255,80,100,0.18)"
-COLOR_NEG_TEXT  = "#FF9BAA"
-COLOR_EMPTY_BG  = "#3A0A16"
-COLOR_EMPTY_TEXT = "rgba(230,228,219,0.35)"
+COLOR_POS_BG    = "#EBF4EF"
+COLOR_POS_TEXT  = "#2F7A4E"
+COLOR_NEG_BG    = "#FAECEE"
+COLOR_NEG_TEXT  = "#B0223A"
+COLOR_EMPTY_BG  = _BMARK_ROW
+COLOR_EMPTY_TEXT = "#9E9B93"
 COLOR_META_TEXT = _TXT_MUTED
 COLOR_DATE_TEXT = _TXT_MUTED
 
@@ -550,11 +550,11 @@ def build_html_table(data: dict) -> str:
                font-family:'Inter','Segoe UI',Tahoma,system-ui,sans-serif; }}
       table {{ border-collapse:collapse; width:100%; font-size:12px; }}
       td    {{ border-bottom:1px solid {_BORDER}; white-space:nowrap; }}
-      tr:hover td {{ filter:brightness(1.12); }}
+      tr:hover td {{ filter:brightness(0.97); }}
       .sec td {{
-        background:#7A0E2D; color:#FFFFFF; font-weight:700;
+        background:{_TAG_OFFWHITE}; color:{COLOR_ORANGE}; font-weight:700;
         font-size:11px; text-transform:uppercase; letter-spacing:2px;
-        padding:10px 12px 4px 12px; border-bottom:none; border-top:1px solid rgba(255,255,255,0.08);
+        padding:10px 12px 4px 12px; border-bottom:none; border-top:1px solid {_BORDER};
       }}
       .fund td {{ background:{COLOR_FUND_BG}; }}
       .bmark td {{ background:{COLOR_BMARK_BG}; font-style:italic; }}

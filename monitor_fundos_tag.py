@@ -1156,24 +1156,24 @@ def get_benchmark_returns(key: str, ref_date: date,
 TAG_VINHO   = "#630D24"   # RGB 99,13,36   — accent / sidebar
 TAG_OFFWHITE = "#E6E4DB"  # RGB 230,228,219 — fundo principal
 # Derivados
-_FUND_ROW   = "#630D24"                   # linhas de fundo — vinho TAG
-_BMARK_ROW  = "#4A0D1C"                   # linhas benchmark — vinho escuro
-_BORDER     = "rgba(255,255,255,0.10)"    # borda sutil branca sobre vinho
-_TXT_DARK   = "#E6E4DB"                   # texto principal — areia TAG
-_TXT_MUTED  = "rgba(230,228,219,0.65)"   # texto secundário — areia suave
-_SEC_BG     = "#7A0E2D"                   # separadores — vinho médio
-_EMPTY_BG   = "#3A0A16"                   # células N/D — vinho mais escuro
-_EMPTY_TXT  = "rgba(230,228,219,0.35)"   # texto N/D — areia muito suave
+_FUND_ROW   = "#FFFFFF"       # linhas de fundo — branco puro
+_BMARK_ROW  = "#EFEDE6"       # linhas benchmark — offwhite levemente mais escuro
+_BORDER     = "#D6D3CA"       # borda: offwhite -8% luminosidade
+_TXT_DARK   = "#1C0A10"       # texto escuro — derivado do vinho
+_TXT_MUTED  = "#7A776E"       # texto muted — cinza quente médio
+_SEC_BG     = TAG_OFFWHITE    # separadores de seção = fundo da página
+_EMPTY_BG   = _BMARK_ROW
+_EMPTY_TXT  = "#9E9B93"
 
 COLOR_HEADER    = TAG_VINHO
 COLOR_HDR_TEXT  = "#FFFFFF"
 COLOR_ORANGE    = TAG_VINHO
 COLOR_FUND_BG   = _FUND_ROW
 COLOR_BMARK_BG  = _BMARK_ROW
-COLOR_POS_BG    = "rgba(74,186,125,0.18)"
-COLOR_POS_TEXT  = "#6FD4A0"
-COLOR_NEG_BG    = "rgba(255,80,100,0.18)"
-COLOR_NEG_TEXT  = "#FF9BAA"
+COLOR_POS_BG    = "#EBF4EF"
+COLOR_POS_TEXT  = "#2F7A4E"
+COLOR_NEG_BG    = "#FAECEE"
+COLOR_NEG_TEXT  = "#B0223A"
 COLOR_EMPTY_BG   = _EMPTY_BG
 COLOR_EMPTY_TEXT = _EMPTY_TXT
 COLOR_META_TEXT = _TXT_MUTED
@@ -1264,11 +1264,11 @@ def build_html_table(rows: list) -> str:
                font-family:'Inter','Segoe UI',Tahoma,system-ui,sans-serif; }}
       table {{ border-collapse:collapse; width:100%; font-size:12px; }}
       td    {{ border-bottom:1px solid {_BORDER}; white-space:nowrap; }}
-      tr:hover td {{ filter:brightness(1.12); }}
+      tr:hover td {{ filter:brightness(0.97); }}
       .sec td {{
-        background:{_SEC_BG}; color:#FFFFFF; font-weight:700;
+        background:{TAG_OFFWHITE}; color:{COLOR_ORANGE}; font-weight:700;
         font-size:11px; text-transform:uppercase; letter-spacing:2px;
-        padding:10px 12px 4px 12px; border-bottom:none; border-top:1px solid rgba(255,255,255,0.08);
+        padding:10px 12px 4px 12px; border-bottom:none; border-top:1px solid {_BORDER};
       }}
       .fund td {{ background:{COLOR_FUND_BG}; }}
       .bmark td {{ background:{COLOR_BMARK_BG}; font-style:italic; }}
