@@ -79,6 +79,15 @@ FUND_GROUPS = [
                 "liquidez": "D180",
                 "pub_alvo": "Profissional",
             },
+            {
+                "cnpj":          "14115121000193",
+                "name":          "VALORA TITAN FIDC",
+                "tx_gestao":     "N/A",
+                "liquidez":      "D180",
+                "pub_alvo":      "Qualificado",
+                "britech_id":    80,
+                "britech_start": "2020-01-01",
+            },
         ],
         "benchmarks": [
             {"name": "JGP Debêntures CDI+", "key": "cdi"},

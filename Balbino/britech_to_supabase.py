@@ -34,6 +34,7 @@ REPO_ROOT  = Path(__file__).parent.parent
 CACHE_FILE = REPO_ROOT / "data" / "britech_cache.json"
 
 BRITECH_FUNDS = [
+    {"id_cliente":   80, "britech_start": "2020-01-01"},
     {"id_cliente": 2936, "britech_start": "2026-05-20"},
     {"id_cliente": 2778, "britech_start": "2026-05-04"},
 ]
