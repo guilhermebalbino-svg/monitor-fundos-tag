@@ -34,7 +34,8 @@ REPO_ROOT  = Path(__file__).parent.parent
 CACHE_FILE = REPO_ROOT / "data" / "britech_cache.json"
 
 BRITECH_FUNDS = [
-    {"id_cliente":   80, "britech_start": "2020-01-01"},
+    # id_type="carteira": usa BuscaHistoricoCotaDia (FIDCs sem endpoint de estratégia)
+    {"id_cliente":   80, "britech_start": "2020-01-01", "id_type": "carteira"},
     {"id_cliente": 2936, "britech_start": "2026-05-20"},
     {"id_cliente": 2778, "britech_start": "2026-05-04"},
 ]
@@ -183,6 +184,66 @@ def compute_returns(id_cliente: int, britech_start: str) -> dict:
     }
 
 
+def compute_returns_from_cotas(id_carteira: int, britech_start: str) -> dict:
+    """Calcula retornos D/M/ANO/1ANO/2ANOS a partir do histórico de cotas (BuscaHistoricoCotaDia).
+    Usado para FIDCs que não têm endpoint de estratégia."""
+    start = (date.today() - timedelta(days=800)).isoformat()
+    end   = date.today().isoformat()
+    url   = (
+        f"https://tag.britech.com.br/WS/api/Fundo/BuscaHistoricoCotaDia"
+        f"?idCarteira={id_carteira}&dataInicio={start}&dataFim={end}"
+    )
+    try:
+        r = requests.get(url, auth=(BRITECH_USER, BRITECH_PASS),
+                         headers={"Accept": "application/json"}, timeout=30)
+        if r.status_code != 200 or not r.json():
+            return {"d_ret": None, "m_ret": None, "ano_ret": None,
+                    "y1_ret": None, "y2_ret": None,
+                    "ref_date": date.today().isoformat(), "pl": None}
+        rows = r.json()
+    except Exception as e:
+        print(f"  Erro API cotas: {e}")
+        return {"d_ret": None, "m_ret": None, "ano_ret": None,
+                "y1_ret": None, "y2_ret": None,
+                "ref_date": date.today().isoformat(), "pl": None}
+
+    cotas = {row["Data"][:10]: {"cota": float(row["CotaFechamento"]),
+                                 "pl":   float(row["PLFechamento"])}
+             for row in rows}
+    sorted_dates = sorted(cotas.keys())
+    ref      = sorted_dates[-1]
+    ref_cota = cotas[ref]["cota"]
+    ref_pl   = cotas[ref]["pl"]
+    print(f"  Ultima cota: {ref} | Cota: {ref_cota:.7f} | PL: {ref_pl:,.2f}")
+
+    def closest_before(target):
+        for d in reversed(sorted_dates):
+            if d <= target and d != ref:
+                return cotas[d]["cota"]
+        return None
+
+    ref_dt  = date.fromisoformat(ref)
+    prev_bd = ref_dt - timedelta(days=1)
+    while prev_bd.weekday() >= 5:
+        prev_bd -= timedelta(days=1)
+
+    def ret(ini_str):
+        c = closest_before(ini_str)
+        if c is None:
+            return None
+        return round((ref_cota / c - 1) * 100, 6)
+
+    return {
+        "d_ret":    ret(prev_bd.isoformat()),
+        "m_ret":    ret((ref_dt.replace(day=1) - timedelta(days=1)).isoformat()),
+        "ano_ret":  ret(f"{ref_dt.year - 1}-12-31"),
+        "y1_ret":   ret(ref_dt.replace(year=ref_dt.year - 1).isoformat()),
+        "y2_ret":   ret(ref_dt.replace(year=ref_dt.year - 2).isoformat()),
+        "ref_date": ref,
+        "pl":       ref_pl,
+    }
+
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
@@ -199,11 +260,15 @@ def main():
 
     cache = {}
     for fund in BRITECH_FUNDS:
-        id_c  = fund["id_cliente"]
-        start = fund["britech_start"]
-        print(f"ID {id_c} (inicio {start})")
+        id_c    = fund["id_cliente"]
+        start   = fund["britech_start"]
+        id_type = fund.get("id_type", "cliente")
+        print(f"ID {id_c} (inicio {start}, tipo {id_type})")
 
-        retornos = compute_returns(id_c, start)
+        if id_type == "carteira":
+            retornos = compute_returns_from_cotas(id_c, start)
+        else:
+            retornos = compute_returns(id_c, start)
 
         # Proteção: não sobrescreve com data mais antiga que a já gravada
         prev = existing.get(str(id_c), {})
