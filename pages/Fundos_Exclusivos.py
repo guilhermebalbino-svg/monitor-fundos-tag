@@ -736,7 +736,7 @@ def main():
 <html>
 <head><meta charset="utf-8">
 <style>
-  html, body {{ margin:0; padding:0; background:#F5F3EE; }}
+  html, body {{ margin:0; padding:0; background:#E6E4DB; }}
 </style>
 </head>
 <body>

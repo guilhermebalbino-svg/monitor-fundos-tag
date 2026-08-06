@@ -1646,14 +1646,14 @@ def main():
     if OBSERVACOES:
         obs_html = f"""
 <div style="margin-top:12px; padding:10px 16px 12px 16px;
-            background:#120a0a; border-left:3px solid #E8801A;
+            background:#F5EFE8; border-left:3px solid #A0521A;
             border-radius:0 3px 3px 0;
             font-family:'Segoe UI',Arial,sans-serif;">
-  <div style="color:#E8801A; font-size:10px; font-weight:700;
+  <div style="color:#A0521A; font-size:10px; font-weight:700;
               letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px;">
     &#9888; Observações
   </div>
-  <div style="color:#c8b8a8; font-size:12px; line-height:1.6;">
+  <div style="color:#4A3520; font-size:12px; line-height:1.6;">
     {OBSERVACOES}
   </div>
 </div>"""
@@ -1662,7 +1662,7 @@ def main():
 <html>
 <head><meta charset="utf-8">
 <style>
-  html, body {{ margin:0; padding:0; background:#0d0608; }}
+  html, body {{ margin:0; padding:0; background:{TAG_OFFWHITE}; }}
 </style>
 </head>
 <body>
