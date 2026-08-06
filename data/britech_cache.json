@@ -5,22 +5,22 @@
     "ano_ret": null,
     "y1_ret": null,
     "y2_ret": null,
-    "ref_date": "2026-08-05",
+    "ref_date": "2026-08-06",
     "pl": null
   },
   "2936": {
     "d_ret": -0.2943932801549804,
     "m_ret": -1.3057749547558368,
-    "ano_ret": null,
+    "ano_ret": -2.55819761265,
     "y1_ret": null,
     "y2_ret": null,
     "ref_date": "2026-07-30",
     "pl": 5816190.17
   },
   "2778": {
-    "d_ret": null,
+    "d_ret": -0.06692992235232335,
     "m_ret": 0.16078436777966426,
-    "ano_ret": null,
+    "ano_ret": -0.7082905873,
     "y1_ret": null,
     "y2_ret": null,
     "ref_date": "2026-07-28",
