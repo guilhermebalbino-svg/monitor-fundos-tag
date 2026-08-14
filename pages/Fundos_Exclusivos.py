@@ -655,6 +655,10 @@ def main():
       [data-testid="stMain"] p,[data-testid="stMain"] span,
       [data-testid="stMain"] div,[data-testid="stMain"] label { color:#1C0A10 !important; }
 
+      /* Topbar: IDs têm especificidade (1-0-0) > atributo+div (0-1-1) */
+      #exclusivos-topbar-title    { color:#FFFFFF !important; -webkit-text-fill-color:#FFFFFF !important; }
+      #exclusivos-topbar-subtitle { color:#E6E4DB !important; -webkit-text-fill-color:#E6E4DB !important; }
+
       #MainMenu { visibility:hidden; }
       footer    { visibility:hidden; }
       header[data-testid="stHeader"] { visibility:hidden; height:0; }
@@ -711,12 +715,14 @@ def main():
         <div style="background:#630D24; border-radius:12px;
                     padding:16px 22px; margin-bottom:16px;
                     box-shadow:0 1px 4px rgba(28,24,22,.14);">
-          <div style="font-size:20px; font-weight:700; color:#FFFFFF !important;
+          <div id="exclusivos-topbar-title"
+               style="font-size:20px; font-weight:700; color:#FFFFFF !important;
                       -webkit-text-fill-color:#FFFFFF !important;
                       font-family:'Inter','Segoe UI',Tahoma,sans-serif; letter-spacing:0.3px;">
             Monitor de Fundos Exclusivos
           </div>
-          <div style="color:#E6E4DB !important; font-size:12.5px; margin-top:3px;
+          <div id="exclusivos-topbar-subtitle"
+               style="color:#E6E4DB !important; font-size:12.5px; margin-top:3px;
                       -webkit-text-fill-color:#E6E4DB !important;">
             Atualizado em {datetime.now(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y às %H:%M')}
           </div>
