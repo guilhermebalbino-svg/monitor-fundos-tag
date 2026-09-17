@@ -864,9 +864,22 @@ def _fetch_maisretorno(slug: str) -> dict:
     try:
         r = requests.get(
             f"https://maisretorno.com/indice/{slug}",
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
-            timeout=15,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Connection": "keep-alive",
+                "Upgrade-Insecure-Requests": "1",
+            },
+            timeout=20,
         )
+        if r.status_code != 200:
+            return {}
         m = re.search(
             r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
             r.text, re.DOTALL,
@@ -906,10 +919,12 @@ def fetch_ima_maisretorno(indice: str) -> dict:
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def fetch_ima_series(indice: str):
+def fetch_ima_series(indice: str, start_ts: int = 0, end_ts: int = 0):
     """
-    IMA-B/5/5+ – Mais Retorno (gratuito) como base; upgrade para ComDinheiro
-    ou ANBIMA se credentials configuradas (retorno total diário completo).
+    IMA-B/5/5+ — Mais Retorno (gratuito, sem credenciais) como fonte primária.
+    Fallback: ComDinheiro/ANBIMA se credenciais configuradas.
+    Fallback final IMA-B 5+: IB5M11.SA no Yahoo Finance (dado correto).
+    IMAB11/B5MB11 têm histórico quebrado no Yahoo Finance — não usar.
     """
     if COMDINHEIRO_BEARER_TOKEN:
         s = fetch_ima_comdinheiro(indice)
@@ -919,7 +934,13 @@ def fetch_ima_series(indice: str):
         s = fetch_ima_anbima(indice)
         if not s.empty:
             return s
-    return fetch_ima_maisretorno(indice)
+    result = fetch_ima_maisretorno(indice)
+    if result:
+        return result
+    # Fallback para IMA-B 5+ via ETF IB5M11 (único com dado histórico correto)
+    if indice == "IMA-B 5+" and start_ts and end_ts:
+        return fetch_yf_ticker("IB5M11.SA", start_ts, end_ts)
+    return {}
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -1092,11 +1113,12 @@ def load_all_data():
         fut_ibov       = ex.submit(fetch_yf_ticker, "%5EBVSP", start_ts, end_ts)
         fut_sofr       = ex.submit(fetch_sofr_series)
         fut_ihfa       = ex.submit(fetch_ihfa_series)
-        # IMA-B via ETFs B3 no Yahoo Finance (adjClose captura cupons NTN-B).
-        # IMAB11=IMA-B | B5MB11=IMA-B5 | IB5M11=IMA-B5+
-        fut_imab       = ex.submit(fetch_yf_ticker, "IMAB11.SA", start_ts, end_ts)
-        fut_imab5      = ex.submit(fetch_yf_ticker, "B5MB11.SA", start_ts, end_ts)
-        fut_imab5plus  = ex.submit(fetch_yf_ticker, "IB5M11.SA", start_ts, end_ts)
+        # IMA-B via Mais Retorno (gratuito, sem credenciais).
+        # IMA-B 5+: fallback para IB5M11.SA no Yahoo Finance se Mais Retorno falhar
+        # (IMAB11/B5MB11 têm histórico quebrado no Yahoo Finance — não usar)
+        fut_imab       = ex.submit(fetch_ima_series, "IMA-B",   start_ts, end_ts)
+        fut_imab5      = ex.submit(fetch_ima_series, "IMA-B 5", start_ts, end_ts)
+        fut_imab5plus  = ex.submit(fetch_ima_series, "IMA-B 5+", start_ts, end_ts)
 
         cdi_daily        = fut_cdi.result()
         if isinstance(cdi_daily, pd.Series) and cdi_daily.empty:
@@ -1130,11 +1152,11 @@ def get_benchmark_returns(key: str, ref_date: date,
             return cdi_daily
         return compute_cdi_returns(cdi_daily, ref_date)
     elif key == "imab":
-        return compute_price_returns(imab_prices, ref_date)
+        return dict(imab_prices) if isinstance(imab_prices, dict) else compute_price_returns(imab_prices, ref_date)
     elif key == "imab5":
-        return compute_price_returns(imab5_prices, ref_date)
+        return dict(imab5_prices) if isinstance(imab5_prices, dict) else compute_price_returns(imab5_prices, ref_date)
     elif key == "imab5plus":
-        return compute_price_returns(imab5plus_prices, ref_date)
+        return dict(imab5plus_prices) if isinstance(imab5plus_prices, dict) else compute_price_returns(imab5plus_prices, ref_date)
     elif key == "ibovespa":
         return compute_price_returns(ibov_daily, ref_date)
     elif key == "usdbrl":
