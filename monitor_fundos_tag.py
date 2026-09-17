@@ -905,6 +905,7 @@ def fetch_ima_maisretorno(indice: str) -> dict:
     return _fetch_maisretorno(slug)
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_ima_series(indice: str):
     """
     IMA-B/5/5+ – Mais Retorno (gratuito) como base; upgrade para ComDinheiro
