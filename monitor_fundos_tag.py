@@ -1092,12 +1092,11 @@ def load_all_data():
         fut_ibov       = ex.submit(fetch_yf_ticker, "%5EBVSP", start_ts, end_ts)
         fut_sofr       = ex.submit(fetch_sofr_series)
         fut_ihfa       = ex.submit(fetch_ihfa_series)
-        # IMA-B via ANBIMA API (fonte oficial, retorno total).
-        # Requer ANBIMA_CLIENT_ID + ANBIMA_CLIENT_SECRET em st.secrets.
-        # Retorna série vazia se sem credenciais → retornos exibidos como "-".
-        fut_imab       = ex.submit(fetch_ima_series, "IMA-B")
-        fut_imab5      = ex.submit(fetch_ima_series, "IMA-B 5")
-        fut_imab5plus  = ex.submit(fetch_ima_series, "IMA-B 5+")
+        # IMA-B via ETFs B3 no Yahoo Finance (adjClose captura cupons NTN-B).
+        # IMAB11=IMA-B | B5MB11=IMA-B5 | IB5M11=IMA-B5+
+        fut_imab       = ex.submit(fetch_yf_ticker, "IMAB11.SA", start_ts, end_ts)
+        fut_imab5      = ex.submit(fetch_yf_ticker, "B5MB11.SA", start_ts, end_ts)
+        fut_imab5plus  = ex.submit(fetch_yf_ticker, "IB5M11.SA", start_ts, end_ts)
 
         cdi_daily        = fut_cdi.result()
         if isinstance(cdi_daily, pd.Series) and cdi_daily.empty:
@@ -1131,17 +1130,11 @@ def get_benchmark_returns(key: str, ref_date: date,
             return cdi_daily
         return compute_cdi_returns(cdi_daily, ref_date)
     elif key == "imab":
-        ret = dict(imab_prices) if isinstance(imab_prices, dict) else compute_price_returns(imab_prices, ref_date)
-        ret["ultima_cota"] = ref_date
-        return ret
+        return compute_price_returns(imab_prices, ref_date)
     elif key == "imab5":
-        ret = dict(imab5_prices) if isinstance(imab5_prices, dict) else compute_price_returns(imab5_prices, ref_date)
-        ret["ultima_cota"] = ref_date
-        return ret
+        return compute_price_returns(imab5_prices, ref_date)
     elif key == "imab5plus":
-        ret = dict(imab5plus_prices) if isinstance(imab5plus_prices, dict) else compute_price_returns(imab5plus_prices, ref_date)
-        ret["ultima_cota"] = ref_date
-        return ret
+        return compute_price_returns(imab5plus_prices, ref_date)
     elif key == "ibovespa":
         return compute_price_returns(ibov_daily, ref_date)
     elif key == "usdbrl":
