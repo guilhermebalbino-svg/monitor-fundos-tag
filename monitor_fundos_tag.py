@@ -918,14 +918,64 @@ def fetch_ima_maisretorno(indice: str) -> dict:
     return _fetch_maisretorno(slug)
 
 
+# IdIndice dos IMAs cadastrados na Britech (Atlas-PAS).
+# Descobertos via MarketData/BuscaCotacaoIndiceMaxDt — ver memória
+# reference_britech_endpoints.md para a lista completa de índices.
+_BRITECH_ID_INDICE = {
+    "IMA-B":    102,
+    "IMA-B 5":  107,
+    "IMA-B 5+": 108,
+}
+
+
+def fetch_ima_britech(indice: str) -> dict:
+    """IMA-B/5/5+ via API Britech (fonte oficial da casa, com D).
+
+    Fundo/BuscaRentabilidadeIndices devolve as janelas já acumuladas em %:
+    dia, mês, ano, 12 meses e 24 meses. A API ignora dataReferencia futura e
+    retorna sempre a última cotação disponível (DataIndice).
+    """
+    id_indice = _BRITECH_ID_INDICE.get(indice)
+    if not id_indice or not BRITECH_USER or not BRITECH_PASS:
+        return {}
+    try:
+        r = requests.get(
+            "https://tag.britech.com.br/WS/api/Fundo/BuscaRentabilidadeIndices",
+            params={"idIndices": str(id_indice),
+                    "dataReferencia": date.today().strftime("%Y-%m-%d")},
+            auth=(BRITECH_USER, BRITECH_PASS),
+            headers={"Accept": "application/json"},
+            timeout=25,
+        )
+        if r.status_code != 200:
+            return {}
+        rows = r.json()
+        if not rows:
+            return {}
+        it = rows[0]
+        return {
+            "D":           it.get("RentabilidadeDia"),
+            "M":           it.get("RentabilidadeMes"),
+            "ANO":         it.get("RentabilidadeAno"),
+            "1ANO":        it.get("Rentabilidade12Meses"),
+            "2ANOS":       it.get("Rentabilidade24Meses"),
+            "ultima_cota": pd.to_datetime(it.get("DataIndice")).date(),
+        }
+    except Exception:
+        return {}
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_ima_series(indice: str, start_ts: int = 0, end_ts: int = 0):
     """
-    IMA-B/5/5+ — Mais Retorno (gratuito, sem credenciais) como fonte primária.
-    Fallback: ComDinheiro/ANBIMA se credenciais configuradas.
-    Fallback final IMA-B 5+: IB5M11.SA no Yahoo Finance (dado correto).
+    IMA-B/5/5+ — API Britech como fonte primária (dado oficial da casa, traz D).
+    Fallbacks: ComDinheiro/ANBIMA (se credenciais), Mais Retorno (sem D) e,
+    só para IMA-B 5+, o ETF IB5M11.SA no Yahoo Finance.
     IMAB11/B5MB11 têm histórico quebrado no Yahoo Finance — não usar.
     """
+    result = fetch_ima_britech(indice)
+    if result:
+        return result
     if COMDINHEIRO_BEARER_TOKEN:
         s = fetch_ima_comdinheiro(indice)
         if not s.empty:
