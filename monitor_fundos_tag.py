@@ -306,8 +306,13 @@ _CNPJS_MONITORADOS = frozenset(
 # ──────────────────────────────────────────────────────────────────────────────
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def fetch_cvm_monthly(year: int, month: int) -> pd.DataFrame:
-    """Download CVM daily fund data for a given month, filtrando só os CNPJs monitorados."""
+def fetch_cvm_monthly(year: int, month: int, cnpjs: frozenset) -> pd.DataFrame:
+    """Download CVM daily fund data for a given month, filtrando só os CNPJs monitorados.
+
+    `cnpjs` entra na assinatura para virar parte da chave de cache: incluir um
+    fundo novo tem de invalidar o mês já baixado, senão ele fica invisível até
+    o TTL expirar.
+    """
     url = (
         f"https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/"
         f"inf_diario_fi_{year}{month:02d}.zip"
@@ -330,7 +335,7 @@ def fetch_cvm_monthly(year: int, month: int) -> pd.DataFrame:
         z.close()
         # Filtrar ANTES do to_datetime — descarta ~99% das linhas
         df["CNPJ_norm"] = df["CNPJ_FUNDO_CLASSE"].str.replace(r"\D", "", regex=True)
-        df = df[df["CNPJ_norm"].isin(_CNPJS_MONITORADOS)].copy()
+        df = df[df["CNPJ_norm"].isin(cnpjs)].copy()
         df["DT_COMPTC"] = pd.to_datetime(df["DT_COMPTC"])
         return df
     except Exception:
@@ -410,6 +415,21 @@ def nearest_before(series: pd.Series, target_date) -> float:
     return subset.iloc[-1]
 
 
+def base_desde_inicio(series: pd.Series, target_date) -> float:
+    """Base de cálculo para fundos novos, cuja série começa depois da âncora.
+
+    Para MTD/YTD de um fundo lançado no meio da janela, a referência correta é
+    a primeira cota — o retorno passa a ser "desde o início", que é como a
+    lâmina de qualquer fundo novo reporta. Fora desse caso devolve NaN, para
+    não mascarar buraco de dado em fundo já estabelecido.
+    """
+    if series.empty:
+        return np.nan
+    if pd.Timestamp(target_date) < series.index.min():
+        return series.iloc[0]
+    return np.nan
+
+
 def pct_return(v_end, v_start) -> float:
     """Percentage return between two values."""
     if pd.isna(v_end) or pd.isna(v_start) or v_start == 0:
@@ -453,17 +473,25 @@ def compute_fund_returns(quota_series: pd.Series, today: date) -> dict:
     else:
         d_ret = pct_return(last_val, prev_obs.iloc[-1])
 
-    # Month return: last vs end of previous month
+    # Month return: last vs end of previous month.
+    # Fundo lançado no meio do mês não tem cota em 31 do mês anterior: nesse
+    # caso o MTD é medido desde a primeira cota.
     first_of_month = last_ts.replace(day=1)
     prev_month_end = first_of_month - timedelta(days=1)
     v_prev_month = nearest_before(quota_series, prev_month_end)
+    if pd.isna(v_prev_month):
+        v_prev_month = base_desde_inicio(quota_series, prev_month_end)
     m_ret = pct_return(last_val, v_prev_month)
 
-    # Year to date: last vs end of previous year
+    # Year to date: last vs end of previous year (idem para fundo novo)
     prev_year_end = date(last_ts.year - 1, 12, 31)
     v_prev_year_end = nearest_before(quota_series, prev_year_end)
+    if pd.isna(v_prev_year_end):
+        v_prev_year_end = base_desde_inicio(quota_series, prev_year_end)
     ano_ret = pct_return(last_val, v_prev_year_end)
 
+    # 1 e 2 anos ficam N/D de propósito quando o fundo é mais novo que a
+    # janela — preenchê-los com "desde o início" seria informação falsa.
     # 1 year: last vs same day 1 year ago
     one_year_ago = last_ts - pd.DateOffset(years=1)
     v_1y = nearest_before(quota_series, one_year_ago)
@@ -1138,7 +1166,8 @@ def load_all_data():
     # ── Downloads CVM em paralelo ─────────────────────────────────────────────
     all_dfs = []
     with ThreadPoolExecutor(max_workers=min(len(valid_months), 4)) as ex:
-        futures = {ex.submit(fetch_cvm_monthly, yr, mo): (yr, mo) for yr, mo in valid_months}
+        futures = {ex.submit(fetch_cvm_monthly, yr, mo, _CNPJS_MONITORADOS): (yr, mo)
+                   for yr, mo in valid_months}
         for fut in as_completed(futures):
             df = fut.result()
             if not df.empty:

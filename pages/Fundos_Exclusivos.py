@@ -133,7 +133,10 @@ COLOR_DATE_TEXT = _TXT_MUTED
 
 # ── CVM loading ───────────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600, show_spinner=False)
-def _fetch_cvm_excl(year: int, month: int) -> pd.DataFrame:
+def _fetch_cvm_excl(year: int, month: int, cnpjs: frozenset) -> pd.DataFrame:
+    # `cnpjs` entra na assinatura para virar parte da chave de cache: incluir
+    # um fundo novo tem de invalidar o mês já baixado, senão ele fica
+    # invisível até o TTL expirar.
     url = (
         f"https://dados.cvm.gov.br/dados/FI/DOC/INF_DIARIO/DADOS/"
         f"inf_diario_fi_{year}{month:02d}.zip"
@@ -155,7 +158,7 @@ def _fetch_cvm_excl(year: int, month: int) -> pd.DataFrame:
         )
         z.close()
         df["CNPJ_norm"] = df["CNPJ_FUNDO_CLASSE"].str.replace(r"\D", "", regex=True)
-        df = df[df["CNPJ_norm"].isin(_CNPJS_EXCL)].copy()
+        df = df[df["CNPJ_norm"].isin(cnpjs)].copy()
         df["DT_COMPTC"] = pd.to_datetime(df["DT_COMPTC"])
         return df
     except Exception:
@@ -263,6 +266,20 @@ def _pct_return(v_end, v_start) -> float:
     return (v_end / v_start - 1) * 100
 
 
+def _base_desde_inicio(series: pd.Series, target_date) -> float:
+    """Base para fundo novo, cuja série começa depois da âncora da janela.
+
+    MTD/YTD de fundo lançado no meio da janela passam a ser medidos desde a
+    primeira cota. Fora desse caso devolve NaN, para não mascarar buraco de
+    dado em fundo já estabelecido.
+    """
+    if series.empty:
+        return np.nan
+    if pd.Timestamp(target_date) < series.index.min():
+        return series.iloc[0]
+    return np.nan
+
+
 def compute_fund_returns(quota_series: pd.Series, today: date) -> dict:
     nan_row = {k: np.nan for k in ["D", "M", "ANO", "1ANO", "2ANOS", "ultima_cota"]}
     if quota_series.empty:
@@ -274,8 +291,20 @@ def compute_fund_returns(quota_series: pd.Series, today: date) -> dict:
     prev_obs = quota_series[quota_series.index < last_ts]
     d_ret = np.nan if prev_obs.empty else _pct_return(last_val, prev_obs.iloc[-1])
 
-    m_ret   = _pct_return(last_val, _nearest_before(quota_series, last_ts.replace(day=1) - timedelta(days=1)))
-    ano_ret = _pct_return(last_val, _nearest_before(quota_series, date(last_ts.year - 1, 12, 31)))
+    # Fundo lançado no meio da janela não tem cota na âncora: MTD/YTD passam a
+    # ser medidos desde a primeira cota. 1ANO/2ANOS ficam N/D de propósito —
+    # preenchê-los com "desde o início" seria informação falsa.
+    anc_m   = last_ts.replace(day=1) - timedelta(days=1)
+    anc_ano = date(last_ts.year - 1, 12, 31)
+    base_m   = _nearest_before(quota_series, anc_m)
+    base_ano = _nearest_before(quota_series, anc_ano)
+    if pd.isna(base_m):
+        base_m = _base_desde_inicio(quota_series, anc_m)
+    if pd.isna(base_ano):
+        base_ano = _base_desde_inicio(quota_series, anc_ano)
+
+    m_ret   = _pct_return(last_val, base_m)
+    ano_ret = _pct_return(last_val, base_ano)
     y1_ret  = _pct_return(last_val, _nearest_before(quota_series, last_ts - pd.DateOffset(years=1)))
     y2_ret  = _pct_return(last_val, _nearest_before(quota_series, last_ts - pd.DateOffset(years=2)))
 
@@ -372,7 +401,7 @@ def load_exclusivos_data():
     end_ts    = int(datetime.now().timestamp())
 
     with ThreadPoolExecutor(max_workers=8) as ex:
-        cvm_futs    = [ex.submit(_fetch_cvm_excl, yr, mo) for yr, mo in valid_months]
+        cvm_futs    = [ex.submit(_fetch_cvm_excl, yr, mo, _CNPJS_EXCL) for yr, mo in valid_months]
         cdi_fut     = ex.submit(_fetch_bcb_excl, 12, start_str, end_str)
         ibov_fut    = ex.submit(_fetch_yf_excl, "%5EBVSP", start_ts, end_ts)
         imab_fut    = ex.submit(_fetch_maisretorno_excl, "ima-b")
