@@ -246,9 +246,9 @@ FUND_GROUPS = [
         "group": "PREVIDÊNCIA",
         "funds": [
             {
-                "cnpj": "27036278000175",
-                "name": "TB PREV - OLD",
-                "tx_gestao": "0,75%",
+                "cnpj": "59910278000149",
+                "name": "TB PREVIDÊNCIA CONSERVADOR FIF MULTIMERCADO",
+                "tx_gestao": "0,48%",
                 "liquidez": "D9",
                 "pub_alvo": "Profissional",
             },
