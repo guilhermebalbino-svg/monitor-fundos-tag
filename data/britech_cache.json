@@ -1,12 +1,12 @@
 {
   "80": {
-    "d_ret": 0.026063,
-    "m_ret": -0.078539,
-    "ano_ret": 12.034912,
-    "y1_ret": 14.675183,
-    "y2_ret": 32.077462,
-    "ref_date": "2026-11-04",
-    "pl": 351488108.7
+    "d_ret": null,
+    "m_ret": null,
+    "ano_ret": null,
+    "y1_ret": null,
+    "y2_ret": null,
+    "ref_date": "2026-11-09",
+    "pl": null
   },
   "2936": {
     "d_ret": null,
@@ -14,7 +14,7 @@
     "ano_ret": null,
     "y1_ret": null,
     "y2_ret": null,
-    "ref_date": "2026-11-04",
+    "ref_date": "2026-11-09",
     "pl": null
   },
   "2778": {
@@ -23,7 +23,7 @@
     "ano_ret": null,
     "y1_ret": null,
     "y2_ret": null,
-    "ref_date": "2026-11-04",
+    "ref_date": "2026-11-09",
     "pl": null
   }
 }
