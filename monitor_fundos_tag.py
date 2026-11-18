@@ -7,10 +7,14 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
+import os
 import re
+import sys
 import json
 import io
+import time
 import zipfile
+from pathlib import Path
 from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 import calendar
@@ -270,7 +274,7 @@ FUND_GROUPS = [
 # COMDINHEIRO API CREDENTIALS  (necessário para IHFA)
 # ──────────────────────────────────────────────────────────────────────────────
 # Para obter o Bearer Token:
-#   1. Acesse https://www.comdinheiro.com.br com login Tag.invest / Tag.invest1!
+#   1. Acesse https://www.comdinheiro.com.br com o login da casa (no cofre: Romulo/_cofre)
 #   2. Vá em "Minha Conta" → "API" → gere / copie o Bearer Token
 #   3. Cole abaixo:
 COMDINHEIRO_BEARER_TOKEN = st.secrets.get("COMDINHEIRO_BEARER_TOKEN", "")
@@ -283,9 +287,41 @@ ANBIMA_CLIENT_SECRET = st.secrets.get("ANBIMA_CLIENT_SECRET", "")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # BRITECH API CREDENTIALS  — Basic Auth para fundos sem cota CVM (FIPs, etc.)
+#
+# Mesma ordem do boleteiro (boleteiro/britech.py): st.secrets, depois ambiente,
+# depois o .env do time. Senha nunca mora no código nem é copiada para cá —
+# existe um lugar só, credenciais/.env, com dono.
 # ──────────────────────────────────────────────────────────────────────────────
-BRITECH_USER = st.secrets.get("BRITECH_USER", "")
-BRITECH_PASS = st.secrets.get("BRITECH_PASS", "")
+_CREDENCIAIS_TIME = Path(r"G:\Drives compartilhados\Gestao_AI\credenciais")
+
+
+def _britech_credencial() -> tuple:
+    """(user, pass) ou ('', '') se não houver em lugar nenhum.
+
+    1. st.secrets  — é o único que existe no Streamlit Cloud
+    2. os.environ  — permite sobrepor na mão para testar
+    3. credenciais/.env via env_do_time — a fonte do time, em máquina local
+    """
+    u = st.secrets.get("BRITECH_USER", "") or os.environ.get("BRITECH_USER", "")
+    p = st.secrets.get("BRITECH_PASS", "") or os.environ.get("BRITECH_PASS", "")
+    if u and p:
+        return u, p
+    try:
+        if str(_CREDENCIAIS_TIME) not in sys.path:
+            sys.path.insert(0, str(_CREDENCIAIS_TIME))
+        import env_do_time
+        env_do_time.carregar()
+        return (os.environ.get("BRITECH_USER", ""),
+                os.environ.get("BRITECH_PASS", ""))
+    except Exception:
+        return "", ""
+
+
+BRITECH_USER, BRITECH_PASS = _britech_credencial()
+
+# Um 401 derruba a Britech para o resto da sessão: sequência de 401 bloqueia a
+# conta, então não adianta a próxima aba tentar de novo. O app avisa uma vez.
+_BRITECH_401 = False
 
 # ──────────────────────────────────────────────────────────────────────────────
 # OBSERVAÇÕES  (editar aqui para atualizar a caixa de notas do monitor)
@@ -946,6 +982,60 @@ def fetch_ima_maisretorno(indice: str) -> dict:
     return _fetch_maisretorno(slug)
 
 
+_BRITECH_BASE = "https://tag.britech.com.br/WS/api/"
+
+
+def britech_get(endpoint: str, timeout: int = 25, **params):
+    """GET autenticado na Britech. Devolve o JSON, ou None se não deu.
+
+    Mesma política do boleteiro (boleteiro/britech.py):
+      401 — NÃO tenta de novo, nem nesta chamada nem nas seguintes da sessão.
+            Sequência de 401 bloqueia a conta na Britech, e foi assim que o
+            robô diário ficou 14 dias martelando a API com a senha velha.
+      429 — limite de requisições: espera e tenta no máximo 3 vezes.
+    """
+    global _BRITECH_401
+    if _BRITECH_401 or not BRITECH_USER or not BRITECH_PASS:
+        return None
+    for tentativa in range(3):
+        try:
+            r = requests.get(_BRITECH_BASE + endpoint, params=params,
+                             auth=(BRITECH_USER, BRITECH_PASS),
+                             headers={"Accept": "application/json"},
+                             timeout=timeout)
+        except Exception:
+            return None
+        if r.status_code == 401:
+            _BRITECH_401 = True          # trava o resto da sessão
+            return None
+        if r.status_code == 429:
+            time.sleep(5 * (tentativa + 1))
+            continue
+        if r.status_code != 200:
+            return None
+        try:
+            return r.json()
+        except Exception:
+            return None
+    return None                          # 429 nas 3 tentativas
+
+
+def aviso_britech_401():
+    """Caixa de aviso no app quando a credencial da Britech é recusada."""
+    if not _BRITECH_401:
+        return
+    st.warning(
+        "**Britech: senha expirada ou errada (HTTP 401).** "
+        "Os benchmarks de IMA-B e os fundos sem cota na CVM estão usando "
+        "fonte alternativa ou o último dado conhecido.\n\n"
+        "Para corrigir, atualize a credencial em **`credenciais/.env`** "
+        "(`BRITECH_USER` / `BRITECH_PASS`) e também nos **Secrets do "
+        "Streamlit Cloud**. O app parou de tentar de propósito: uma "
+        "sequência de 401 bloqueia a conta na Britech.",
+        icon="🔑",
+    )
+
+
 # IdIndice dos IMAs cadastrados na Britech (Atlas-PAS).
 # Descobertos via MarketData/BuscaCotacaoIndiceMaxDt — ver memória
 # reference_britech_endpoints.md para a lista completa de índices.
@@ -964,22 +1054,14 @@ def fetch_ima_britech(indice: str) -> dict:
     retorna sempre a última cotação disponível (DataIndice).
     """
     id_indice = _BRITECH_ID_INDICE.get(indice)
-    if not id_indice or not BRITECH_USER or not BRITECH_PASS:
+    if not id_indice:
+        return {}
+    rows = britech_get("Fundo/BuscaRentabilidadeIndices",
+                       idIndices=str(id_indice),
+                       dataReferencia=date.today().strftime("%Y-%m-%d"))
+    if not rows:
         return {}
     try:
-        r = requests.get(
-            "https://tag.britech.com.br/WS/api/Fundo/BuscaRentabilidadeIndices",
-            params={"idIndices": str(id_indice),
-                    "dataReferencia": date.today().strftime("%Y-%m-%d")},
-            auth=(BRITECH_USER, BRITECH_PASS),
-            headers={"Accept": "application/json"},
-            timeout=25,
-        )
-        if r.status_code != 200:
-            return {}
-        rows = r.json()
-        if not rows:
-            return {}
         it = rows[0]
         return {
             "D":           it.get("RentabilidadeDia"),
@@ -993,15 +1075,49 @@ def fetch_ima_britech(indice: str) -> dict:
         return {}
 
 
+def fetch_ima_cache(indice: str) -> dict:
+    """IMA-B/5/5+ do britech_cache.json no GitHub.
+
+    O Streamlit Cloud não alcança a API da Britech, que só responde de dentro
+    da rede da TAG. O robô local grava os índices no mesmo JSON dos fundos e a
+    nuvem lê dali — mesmo caminho, já comprovado.
+    """
+    row = (_fetch_britech_cache().get("indices") or {}).get(indice)
+    if not row:
+        return {}
+
+    def _f(v):
+        return float(v) if v is not None else np.nan
+
+    ref = row.get("ref_date") or ""
+    try:
+        uc = date.fromisoformat(ref) if ref else np.nan
+    except ValueError:
+        uc = np.nan
+    return {
+        "D":           _f(row.get("d_ret")),
+        "M":           _f(row.get("m_ret")),
+        "ANO":         _f(row.get("ano_ret")),
+        "1ANO":        _f(row.get("y1_ret")),
+        "2ANOS":       _f(row.get("y2_ret")),
+        "ultima_cota": uc,
+    }
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_ima_series(indice: str, start_ts: int = 0, end_ts: int = 0):
     """
     IMA-B/5/5+ — API Britech como fonte primária (dado oficial da casa, traz D).
-    Fallbacks: ComDinheiro/ANBIMA (se credenciais), Mais Retorno (sem D) e,
-    só para IMA-B 5+, o ETF IB5M11.SA no Yahoo Finance.
+
+    Ordem: API direta (só funciona de dentro da rede da TAG) → cache JSON no
+    GitHub, que é o caminho do Streamlit Cloud → ComDinheiro/ANBIMA (se houver
+    credencial) → Mais Retorno (sem D) → ETF IB5M11.SA, só para IMA-B 5+.
     IMAB11/B5MB11 têm histórico quebrado no Yahoo Finance — não usar.
     """
     result = fetch_ima_britech(indice)
+    if result:
+        return result
+    result = fetch_ima_cache(indice)
     if result:
         return result
     if COMDINHEIRO_BEARER_TOKEN:
@@ -1626,6 +1742,8 @@ def main():
             sofr_daily,
             ihfa_series,
         ) = load_all_data()
+
+    aviso_britech_401()
 
     today = date.today()
 

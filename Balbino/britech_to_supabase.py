@@ -3,6 +3,11 @@ britech_to_supabase.py
 Puxa retornos da API Britech e salva em data/britech_cache.json no repositório.
 Rode localmente (precisa de acesso à rede interna da TAG para a API Britech).
 
+Credencial: vem do .env do TIME (credenciais/.env, via env_do_time), o mesmo
+que o boleteiro usa. Não existe mais .env nesta pasta — uma senha só, num
+lugar só. O que já estiver em os.environ continua vencendo, para dar sobrepor
+na mão ao testar.
+
 Uso:
     python britech_to_supabase.py
 """
@@ -16,23 +21,25 @@ import requests
 from datetime import date, timedelta
 from pathlib import Path
 
-# ── Carrega .env ──────────────────────────────────────────────────────────────
-env_path = Path(__file__).parent / ".env"
-if env_path.exists():
-    for line in env_path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, v = line.split("=", 1)
-            os.environ.setdefault(k.strip(), v.strip())
+REPO_ROOT   = Path(__file__).parent.parent
+CACHE_FILE  = REPO_ROOT / "data" / "britech_cache.json"
+CREDENCIAIS = REPO_ROOT / "credenciais"
+
+# ── Credencial do time ────────────────────────────────────────────────────────
+if not (os.environ.get("BRITECH_USER") and os.environ.get("BRITECH_PASS")):
+    sys.path.insert(0, str(CREDENCIAIS))
+    try:
+        import env_do_time
+        env_do_time.carregar()
+    except Exception as e:
+        sys.exit(f"Erro ao ler {CREDENCIAIS / '.env'}: {e}")
 
 BRITECH_USER = os.environ.get("BRITECH_USER", "")
 BRITECH_PASS = os.environ.get("BRITECH_PASS", "")
 
 if not BRITECH_USER or not BRITECH_PASS:
-    sys.exit("Erro: defina BRITECH_USER e BRITECH_PASS no .env")
-
-REPO_ROOT  = Path(__file__).parent.parent
-CACHE_FILE = REPO_ROOT / "data" / "britech_cache.json"
+    sys.exit(f"Erro: BRITECH_USER/BRITECH_PASS nao encontrados em "
+             f"{CREDENCIAIS / '.env'}")
 
 BRITECH_FUNDS = [
     # id_type="carteira": usa BuscaHistoricoCotaDia (FIDCs sem endpoint de estratégia)
@@ -40,6 +47,17 @@ BRITECH_FUNDS = [
     {"id_cliente": 2936, "britech_start": "2026-05-20"},
     {"id_cliente": 2778, "britech_start": "2026-05-04"},
 ]
+
+# Índices de mercado gravados junto no cache. O Streamlit Cloud não alcança a
+# API da Britech (ela só responde de dentro da rede da TAG), então o benchmark
+# precisa chegar lá pelo mesmo caminho dos fundos: JSON no GitHub.
+# IdIndice descobertos via MarketData/BuscaCotacaoIndiceMaxDt.
+BRITECH_INDICES = {
+    "CDI":      1,
+    "IMA-B":    102,
+    "IMA-B 5":  107,
+    "IMA-B 5+": 108,
+}
 
 # ── API ────────────────────────────────────────────────────────────────────────
 
@@ -247,6 +265,51 @@ def compute_returns_from_cotas(id_carteira: int, britech_start: str) -> dict:
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
+def busca_indices() -> dict:
+    """Retornos dos índices de mercado, numa única chamada.
+
+    Fundo/BuscaRentabilidadeIndices aceita vários IdIndice separados por
+    vírgula e devolve as janelas já acumuladas em %. Um ID inexistente derruba
+    a chamada inteira com HTTP 400, então a lista tem de estar certa.
+
+    Atenção: as janelas são o mês/ano-calendário que CONTÉM DataIndice,
+    calculadas com o dado existente no momento da consulta — não são
+    point-in-time. Para consulta ao vivo (que é o caso aqui) está correto.
+    """
+    ids = ",".join(str(i) for i in BRITECH_INDICES.values())
+    try:
+        r = requests.get(
+            "https://tag.britech.com.br/WS/api/Fundo/BuscaRentabilidadeIndices",
+            params={"idIndices": ids, "dataReferencia": date.today().isoformat()},
+            auth=(BRITECH_USER, BRITECH_PASS),
+            headers={"Accept": "application/json"}, timeout=60,
+        )
+        if r.status_code != 200:
+            print(f"  [AVISO] indices: HTTP {r.status_code} — {r.text[:140]}")
+            return {}
+        rows = r.json()
+    except Exception as e:
+        print(f"  [AVISO] indices: {type(e).__name__}: {str(e)[:120]}")
+        return {}
+
+    por_id = {it["IdIndice"]: it for it in rows}
+    fora = {}
+    for nome, idx in BRITECH_INDICES.items():
+        it = por_id.get(idx)
+        if not it:
+            print(f"  [AVISO] {nome} (id {idx}) nao veio na resposta.")
+            continue
+        fora[nome] = {
+            "d_ret":    it.get("RentabilidadeDia"),
+            "m_ret":    it.get("RentabilidadeMes"),
+            "ano_ret":  it.get("RentabilidadeAno"),
+            "y1_ret":   it.get("Rentabilidade12Meses"),
+            "y2_ret":   it.get("Rentabilidade24Meses"),
+            "ref_date": str(it.get("DataIndice") or "")[:10],
+        }
+    return fora
+
+
 def checa_autenticacao() -> bool:
     """Confirma que a credencial ainda vale antes de tentar qualquer fundo.
 
@@ -266,7 +329,9 @@ def checa_autenticacao() -> bool:
         return False
     if r.status_code == 401:
         print("[ERRO] HTTP 401 — credencial recusada pela Britech.")
-        print("       Verifique BRITECH_USER/BRITECH_PASS em Balbino/.env.")
+        print(f"       Atualize BRITECH_USER/BRITECH_PASS em {CREDENCIAIS / '.env'}")
+        print("       e tambem nos Secrets do Streamlit Cloud.")
+        print("       Nao reexecute em sequencia: varios 401 bloqueiam a conta.")
         return False
     if r.status_code != 200:
         print(f"[ERRO] Britech respondeu HTTP {r.status_code}: {r.text[:200]}")
@@ -355,6 +420,30 @@ def main():
 
         cache[str(id_c)] = retornos
         print()
+
+    # ── Índices de mercado (CDI, IMA-B, IMA-B 5, IMA-B 5+) ────────────────────
+    # Chave "indices" não colide com os IDs de fundo, que são numéricos.
+    print("Indices de mercado")
+    indices = busca_indices()
+    prev_idx = existing.get("indices", {})
+    if indices:
+        # Mesma trava dos fundos: índice que não veio mantém o valor anterior.
+        for nome in BRITECH_INDICES:
+            if nome not in indices and nome in prev_idx:
+                print(f"  [AVISO] {nome} nao veio — mantendo cache anterior.")
+                indices[nome] = prev_idx[nome]
+        for nome, v in indices.items():
+            print(f"  {nome:<10} {v['ref_date']}  D={v['d_ret']}  M={v['m_ret']}  "
+                  f"ANO={v['ano_ret']}")
+        cache["indices"] = indices
+    elif prev_idx:
+        print("  [AVISO] nenhum indice veio — mantendo cache anterior.")
+        cache["indices"] = prev_idx
+        falhas.append("indices")
+    else:
+        print("  [AVISO] nenhum indice veio e nao ha cache anterior.")
+        falhas.append("indices")
+    print()
 
     # Grava JSON
     CACHE_FILE.parent.mkdir(exist_ok=True)
