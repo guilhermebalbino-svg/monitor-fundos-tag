@@ -11,6 +11,7 @@ import os
 import sys
 import json
 import subprocess
+import time
 import requests
 from datetime import date, timedelta
 from pathlib import Path
@@ -246,9 +247,62 @@ def compute_returns_from_cotas(id_carteira: int, britech_start: str) -> dict:
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
+def checa_autenticacao() -> bool:
+    """Confirma que a credencial ainda vale antes de tentar qualquer fundo.
+
+    Sem isso, um 401 vira 'nenhuma cota encontrada' e o robô segue como se o
+    fundo estivesse sem dado — foi o que apagou 2 semanas de histórico quando a
+    senha mudou em 04/11/2026.
+    """
+    try:
+        r = requests.get(
+            "https://tag.britech.com.br/WS/api/Fundo/BuscaRentabilidadeIndices",
+            params={"idIndices": "1", "dataReferencia": date.today().isoformat()},
+            auth=(BRITECH_USER, BRITECH_PASS),
+            headers={"Accept": "application/json"}, timeout=30,
+        )
+    except Exception as e:
+        print(f"[ERRO] Nao foi possivel falar com a Britech: {e}")
+        return False
+    if r.status_code == 401:
+        print("[ERRO] HTTP 401 — credencial recusada pela Britech.")
+        print("       Verifique BRITECH_USER/BRITECH_PASS em Balbino/.env.")
+        return False
+    if r.status_code != 200:
+        print(f"[ERRO] Britech respondeu HTTP {r.status_code}: {r.text[:200]}")
+        return False
+    return True
+
+
+def limpa_lock_orfao() -> None:
+    """Remove .git/index.lock orfao (git morto nao deixa processo vivo).
+
+    Um lock preso em 25/09/2026 fez o push falhar por 6 dias sem ninguem notar.
+    """
+    lock = REPO_ROOT / ".git" / "index.lock"
+    if not lock.exists():
+        return
+    idade_min = (time.time() - lock.stat().st_mtime) / 60
+    if idade_min < 10:
+        print(f"[AVISO] index.lock recente ({idade_min:.0f} min) — "
+              f"pode haver git rodando. Nao vou remover.")
+        return
+    try:
+        lock.unlink()
+        print(f"[AVISO] index.lock orfao ({idade_min:.0f} min) removido.")
+    except Exception as e:
+        print(f"[AVISO] nao consegui remover index.lock: {e}")
+
+
 def main():
     today = date.today()
     print(f"Atualizando retornos Britech — {today}\n")
+
+    if not checa_autenticacao():
+        print("\nAbortando sem gravar nada — o cache antigo fica preservado.")
+        sys.exit(2)
+
+    falhas = []
 
     # Carrega cache existente para comparar datas
     existing = {}
@@ -270,17 +324,31 @@ def main():
         else:
             retornos = compute_returns(id_c, start)
 
-        # Proteção: não sobrescreve com data mais antiga que a já gravada
+        # Proteção 1: resultado totalmente vazio nunca sobrescreve dado bom.
+        # Quando a API falha (401, timeout, fundo sem cota), compute_returns
+        # devolve tudo None com ref_date = HOJE. Como essa data é mais nova que
+        # a do cache, a trava por data não pegava e o dado bom era apagado.
+        campos = ("d_ret", "m_ret", "ano_ret", "y1_ret", "y2_ret")
+        veio_vazio = all(retornos.get(k) is None for k in campos)
         prev = existing.get(str(id_c), {})
-        prev_date_str = prev.get("ref_date", "")
-        new_date_str  = retornos.get("ref_date", "")
-        if (prev_date_str and new_date_str and new_date_str < prev_date_str
-                and retornos.get("d_ret") is None):
-            print(f"  [AVISO] Nova data {new_date_str} < cache {prev_date_str} com retornos nulos — mantendo cache anterior.")
+        prev_tinha_dado = any(prev.get(k) is not None for k in campos)
+
+        if veio_vazio and prev_tinha_dado:
+            print(f"  [AVISO] API nao devolveu nenhum retorno — mantendo cache de "
+                  f"{prev.get('ref_date')}.")
             retornos = prev
-        elif prev_date_str and new_date_str and new_date_str < prev_date_str:
-            print(f"  [AVISO] Britech retrocedeu: {prev_date_str} → {new_date_str}. Mantendo data anterior.")
-            retornos = prev
+            falhas.append(id_c)
+        elif veio_vazio:
+            print(f"  [AVISO] API nao devolveu nenhum retorno e nao ha cache anterior.")
+            falhas.append(id_c)
+        else:
+            # Proteção 2: não aceita data mais antiga que a já gravada
+            prev_date_str = prev.get("ref_date", "")
+            new_date_str  = retornos.get("ref_date", "")
+            if prev_date_str and new_date_str and new_date_str < prev_date_str:
+                print(f"  [AVISO] Britech retrocedeu: {prev_date_str} → {new_date_str}. "
+                      f"Mantendo data anterior.")
+                retornos = prev
 
         for k, v in retornos.items():
             print(f"  {k}: {v if v is not None else 'N/D'}")
@@ -296,17 +364,31 @@ def main():
     print(f"Gravado em {CACHE_FILE}")
 
     # Commit e push
+    limpa_lock_orfao()
+    git_ok = True
     try:
         subprocess.run(["git", "-C", str(REPO_ROOT), "add", "data/britech_cache.json"],
                        check=True)
-        subprocess.run(["git", "-C", str(REPO_ROOT), "commit", "-m",
-                        f"data: atualiza retornos Britech ({today})"],
-                       check=True)
+        r = subprocess.run(["git", "-C", str(REPO_ROOT), "commit", "-m",
+                            f"data: atualiza retornos Britech ({today})"],
+                           capture_output=True, text=True)
+        if r.returncode != 0 and "nothing to commit" not in (r.stdout + r.stderr):
+            raise subprocess.CalledProcessError(r.returncode, "git commit",
+                                                output=r.stdout, stderr=r.stderr)
         subprocess.run(["git", "-C", str(REPO_ROOT), "push", "origin", "HEAD:main"],
                        check=True)
         print("Push para GitHub concluido.")
     except subprocess.CalledProcessError as e:
-        print(f"Aviso: git falhou ({e}). Verifique manualmente.")
+        git_ok = False
+        print(f"[ERRO] git falhou: {e}")
+
+    # Sai com codigo != 0 quando algo deu errado, para a tarefa agendada do
+    # Windows marcar a execucao como falha em vez de 'Pronto'.
+    if falhas:
+        print(f"\n[ERRO] Sem retorno da Britech para: {', '.join(map(str, falhas))}")
+    if falhas or not git_ok:
+        print("Concluido COM FALHAS.")
+        sys.exit(1)
 
     print("\nConcluido.")
 
