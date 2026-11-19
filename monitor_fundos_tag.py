@@ -1021,19 +1021,21 @@ def britech_get(endpoint: str, timeout: int = 25, **params):
 
 
 def aviso_britech_401():
-    """Caixa de aviso no app quando a credencial da Britech é recusada."""
+    """Registra o 401 da Britech no log do servidor, sem poluir a tela.
+
+    O monitor é visto por cliente: caixa de aviso falando de senha e
+    credencial não tem lugar aqui. E o 401 não degrada o que o cliente vê —
+    os benchmarks e os fundos sem cota CVM continuam vindo do
+    britech_cache.json, que o robô local publica no GitHub.
+
+    Quem opera vê a linha abaixo nos logs do Streamlit Cloud.
+    """
     if not _BRITECH_401:
         return
-    st.warning(
-        "**Britech: senha expirada ou errada (HTTP 401).** "
-        "Os benchmarks de IMA-B e os fundos sem cota na CVM estão usando "
-        "fonte alternativa ou o último dado conhecido.\n\n"
-        "Para corrigir, atualize a credencial em **`credenciais/.env`** "
-        "(`BRITECH_USER` / `BRITECH_PASS`) e também nos **Secrets do "
-        "Streamlit Cloud**. O app parou de tentar de propósito: uma "
-        "sequência de 401 bloqueia a conta na Britech.",
-        icon="🔑",
-    )
+    print("[britech] HTTP 401 — credencial recusada. Servindo do "
+          "britech_cache.json. Atualize BRITECH_USER/BRITECH_PASS em "
+          "credenciais/.env e nos Secrets do Streamlit Cloud "
+          "(usuario correto: op.gestao, conta de servico).")
 
 
 # IdIndice dos IMAs cadastrados na Britech (Atlas-PAS).
