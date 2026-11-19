@@ -144,6 +144,13 @@ FUND_GROUPS = [
                 "pub_alvo": "Qualificado",
             },
             {
+                "cnpj": "68595895000198",
+                "name": "TB ALPHA INDEX FIF EM AÇÕES",
+                "tx_gestao": "N/A",
+                "liquidez": "D3",
+                "pub_alvo": "Geral",
+            },
+            {
                 "cnpj": "62222549000188",
                 "name": "TAG NOVOS GESTORES FIF AÇÕES",
                 "tx_gestao": "N/A",
@@ -210,13 +217,6 @@ FUND_GROUPS = [
     {
         "group": "OFFSHORE",
         "funds": [
-            {
-                "cnpj": "39254283000133",
-                "name": "MULTI ASSETS SOLUTION (COTA ONSHORE)",
-                "tx_gestao": "N/A",
-                "liquidez": "D9",
-                "pub_alvo": "Qualificado",
-            },
             {
                 "cnpj": "37782470000164",
                 "name": "TB HEDGE FUNDS (COTA ONSHORE)",
